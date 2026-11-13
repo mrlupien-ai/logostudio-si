@@ -1,25 +1,26 @@
 import React from 'react';
 import {
-  Shield,
-  Type,
-  Palette,
-  Sliders,
   Grid,
-  Bot,
   Sparkles,
   Download,
-  FolderArchive,
-  RefreshCw,
+  Code,
+  Check,
+  Search,
+  Maximize2,
+  Crosshair,
+  Sliders,
+  ArrowRight,
+  Layers,
 } from 'lucide-react';
-import { LogoState, LogoVariant, TypoContrastStyle, EmblemContainerStyle, MainLayoutMode } from './types/logo';
+import { LogoState, LogoVariant, TypoContrastStyle, MainLayoutMode } from './types/logo';
 import { parseDomainOrBrand, COLOR_PALETTES, BRAND_FONTS } from './data/domains';
 import { getExtendedSemanticIconsForDomain, selectRemixIconsForDomain } from './data/domainSemanticIcons';
 import { constructionsForDomain, familyToLegacyContainerStyle } from './utils/constructionEngine';
+import { resolveLucideIcon } from './utils/svgBuilder';
 import { Header } from './components/Header';
-import { DomainInspector, DomainSymbolsSelector } from './components/Inspector/DomainInspector';
+import { DomainSymbolsSelector } from './components/Inspector/DomainInspector';
 import { TypographyInspector } from './components/Inspector/TypographyInspector';
 import { EmblemInspector } from './components/Inspector/EmblemInspector';
-import { PaletteInspector } from './components/Inspector/PaletteInspector';
 import { OpticalSliders } from './components/Inspector/OpticalSliders';
 import { AiAndFlowPanel } from './components/Inspector/AiAndFlowPanel';
 import { SymbolVaultModal } from './components/SymbolVaultModal';
@@ -27,21 +28,7 @@ import { PortfolioModal } from './components/PortfolioModal';
 import { Variants10Board } from './components/Stage/Variants10Board';
 import { DualCanvasStage } from './components/Stage/DualCanvasStage';
 import { LogoStudioLanding } from './components/Landing/LogoStudioLanding';
-import { downloadBrandKitZip } from './utils/exporter';
-import { ArrowRight } from 'lucide-react';
-
-const AGENCY_CONSTRUCTIONS: EmblemContainerStyle[] = [
-  'cutoutCorner',
-  'monogramSeal',
-  'isoHexCube',
-  'bauhausGrid',
-  'offsetNeo',
-  'swissSeal',
-  'slashCapsule',
-  'shieldCrest',
-  'vennPortal',
-  'minimalistSpark',
-];
+import { downloadBrandKitZip, downloadSvg, copySvgCode } from './utils/exporter';
 
 const TYPO_CONTRAST_STYLES: TypoContrastStyle[] = [
   'bold-bold',
@@ -56,8 +43,6 @@ const TYPO_CONTRAST_STYLES: TypoContrastStyle[] = [
   'bold-bold',
 ];
 
-// Deterministic per-domain ordering: every domain gets its own sequence of emblem constructions,
-// type contrasts, palettes and fonts, so two domains never share the same 10 backgrounds in the same order.
 function hashDomainSeed(text: string): number {
   let h = 2166136261;
   for (let i = 0; i < text.length; i++) {
@@ -78,7 +63,6 @@ function seededShuffle<T>(items: readonly T[], seed: number): T[] {
   return out;
 }
 
-// Keeps the master canvas identical to concept #1 after the concepts are (re)built for a domain.
 function syncMasterWithLeadVariant(s: LogoState): LogoState {
   const lead = s.variants10[0];
   if (!lead) return s;
@@ -95,10 +79,14 @@ export default function App() {
   const [variantSeedOffset, setVariantSeedOffset] = React.useState(0);
   const [remixMode, setRemixMode] = React.useState<'core-focus' | 'deep-semantic'>('core-focus');
   const [paletteIndex, setPaletteIndex] = React.useState(0);
-  const [activeInspectorTab, setActiveInspectorTab] = React.useState<'identity' | 'vault' | 'ai'>('identity');
+  const [leftDockTab, setLeftDockTab] = React.useState<'concepts' | 'vault' | 'ai'>('concepts');
+  const [vaultSearchQuery, setVaultSearchQuery] = React.useState('');
+  const [showSafeGrid, setShowSafeGrid] = React.useState(false);
+  const [showVectorGuides, setShowVectorGuides] = React.useState(true);
+  const [copiedFooterSvg, setCopiedFooterSvg] = React.useState(false);
   const [isPortfolioOpen, setIsPortfolioOpen] = React.useState(false);
   const [isVaultOpen, setIsVaultOpen] = React.useState(false);
-  const [appMode, setAppMode] = React.useState<'studio' | 'landing'>('landing');
+  const [appMode, setAppMode] = React.useState<'studio' | 'landing'>('studio');
 
   // Initialize initial state for "adstock.org"
   const [state, setState] = React.useState<LogoState>(() => {
@@ -117,7 +105,7 @@ export default function App() {
       taglineTracking: 3.5,
 
       typoContrast: 'bold-bold',
-      fontFamily: 'Plus Jakarta Sans',
+      fontFamily: 'Outfit',
       fontWeight1: '800',
       fontWeight2: '700',
       letterCase1: 'as-is',
@@ -224,10 +212,12 @@ export default function App() {
 
   // Initialize 10 variants on first mount
   React.useEffect(() => {
-    setState((prev) => syncMasterWithLeadVariant({
-      ...prev,
-      variants10: generate10Variants(prev, 0),
-    }));
+    setState((prev) =>
+      syncMasterWithLeadVariant({
+        ...prev,
+        variants10: generate10Variants(prev, 0),
+      })
+    );
   }, [generate10Variants]);
 
   // Handle Domain Smart Generation
@@ -268,7 +258,6 @@ export default function App() {
   const handleToggleWordMode = () => {
     setState((prev) => {
       if (prev.word2 && prev.word2.trim() !== '') {
-        // Merge into single word
         const merged = prev.word1 + prev.word2.toLowerCase();
         const next: LogoState = {
           ...prev,
@@ -278,7 +267,6 @@ export default function App() {
         next.variants10 = generate10Variants(next, variantSeedOffset);
         return next;
       } else {
-        // Split in half
         const full = prev.word1;
         const mid = Math.ceil(full.length / 2);
         const w1 = full.slice(0, mid);
@@ -315,7 +303,7 @@ export default function App() {
     }));
   };
 
-  // Remix 10 variants (rotates both domain-accurate semantic icons AND container architectures)
+  // Remix 10 variants
   const handleRemixVariants = () => {
     const nextOffset = variantSeedOffset + 1;
     setVariantSeedOffset(nextOffset);
@@ -383,10 +371,35 @@ export default function App() {
     setState((prev) => ({ ...prev, ...patch }));
   };
 
+  const handleCopyFooterSvg = async () => {
+    const ok = await copySvgCode(state);
+    if (ok) {
+      setCopiedFooterSvg(true);
+      setTimeout(() => setCopiedFooterSvg(false), 2000);
+    }
+  };
+
+  const semanticPool = React.useMemo(() => {
+    return getExtendedSemanticIconsForDomain(
+      state.domain,
+      state.word1,
+      state.word2,
+      state.nicheLabel,
+      state.icons10,
+      state.iconGroups
+    );
+  }, [state.domain, state.word1, state.word2, state.nicheLabel, state.icons10, state.iconGroups]);
+
+  const filteredDrawerIcons = React.useMemo(() => {
+    const q = vaultSearchQuery.trim().toLowerCase();
+    const list = semanticPool.allSemantic;
+    if (!q) return list;
+    return list.filter((ico) => ico.toLowerCase().includes(q));
+  }, [semanticPool.allSemantic, vaultSearchQuery]);
+
   if (appMode === 'landing') {
     return (
       <div className="relative">
-        {/* Floating Top Mode Switcher Bar */}
         <div className="fixed top-3 right-4 z-50 flex items-center gap-2 bg-[#0b0f1a]/95 backdrop-blur-md border border-[#1b2333] px-3.5 py-1.5 rounded-xl shadow-2xl">
           <span className="text-[11px] font-mono text-slate-400 hidden sm:inline">Active View:</span>
           <span className="text-xs font-bold text-blue-400 font-mono">LogoStudio.si SaaS</span>
@@ -412,117 +425,237 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#07090e] text-slate-100 selection:bg-indigo-500 selection:text-white">
-      {/* 1. Header with Top Bar Contract */}
+    <div className="h-screen w-screen flex flex-col bg-[#06080D] text-slate-100 select-none overflow-hidden">
+      {/* 1. TOP STUDIO COMMAND BAR (54px) */}
       <Header
         state={state}
         onDomainChange={(domain) => setState((prev) => ({ ...prev, domain }))}
+        onSelectPortfolioDomain={(dom) => handleDomainGenerate(dom)}
         onGenerate={() => handleDomainGenerate()}
+        onRemix={handleRemixVariants}
         onToggleWordMode={handleToggleWordMode}
         onOpenPortfolio={() => setIsPortfolioOpen(true)}
         onOpenVault={() => setIsVaultOpen(true)}
-        onOpenAiPanel={() => setActiveInspectorTab('ai')}
+        onOpenAiPanel={() => setLeftDockTab('ai')}
         onOpenLandingMockup={() => setAppMode('landing')}
       />
 
-      {/* 2. Main Studio Workspace */}
-      <main className="flex-1 max-w-[1840px] w-full mx-auto p-3 lg:p-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
-        {/* LEFT COLUMN: INSPECTOR & TOOLS (4 COLS) */}
-        <aside className="lg:col-span-4 flex flex-col gap-4">
-          {/* Domain & Industry Niche Header */}
-          <DomainInspector
-            currentDomain={state.domain}
-            nicheLabel={state.nicheLabel}
-            onSelectDomain={(dom) => handleDomainGenerate(dom)}
-            onOpenVault={() => setIsVaultOpen(true)}
-          />
-
-          {/* Inspector Tabs Container */}
-          <div className="bg-[#0b0f1a] border border-[#1b2333] rounded-2xl overflow-hidden shadow-xl flex-1 flex flex-col">
-            {/* Tab navigation */}
-            <div className="grid grid-cols-3 border-b border-[#1b2333] bg-[#080b13] text-[11px] font-bold">
+      {/* 2. MAIN WORKSPACE: 4-ZONE STUDIO ARCHITECTURE */}
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* ZONE 2: LEFT DOCK — ICON RAIL (56px) + NAVIGATOR DRAWER (268px) */}
+        <aside className="flex h-full shrink-0 z-20">
+          {/* 56px Vertical Icon Tool Rail */}
+          <div className="w-14 bg-[#0B0E17] border-r border-white/[0.07] flex flex-col items-center py-3 justify-between shrink-0">
+            <div className="flex flex-col items-center gap-2 w-full px-1.5">
+              {/* Tab 1: 10 Bespoke Agency Concepts */}
               <button
                 type="button"
-                onClick={() => setActiveInspectorTab('identity')}
-                className={`py-3 px-2 text-center border-b-2 transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeInspectorTab === 'identity'
-                    ? 'border-indigo-500 text-indigo-400 bg-[#0b0f1a]'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                onClick={() => setLeftDockTab('concepts')}
+                title="10 Bespoke Agency Concepts (#1 - #10)"
+                className={`w-full py-2 rounded-xl flex flex-col items-center gap-1 transition cursor-pointer ${
+                  leftDockTab === 'concepts'
+                    ? 'bg-indigo-600/20 border border-indigo-500/50 text-indigo-300 shadow-inner'
+                    : 'hover:bg-white/[0.04] border border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Shield className="w-3.5 h-3.5" />
-                <span>Identity Craft</span>
+                <Layers className="w-4 h-4" />
+                <span className="text-[9px] font-bold tracking-tight">Concepts</span>
               </button>
 
+              {/* Tab 2: 1,600+ Symbol Vault */}
               <button
                 type="button"
-                onClick={() => setIsVaultOpen(true)}
-                className="py-3 px-2 text-center border-b-2 border-transparent text-slate-400 hover:text-slate-200 transition cursor-pointer flex items-center justify-center gap-1.5"
-              >
-                <Grid className="w-3.5 h-3.5" />
-                <span>1,600+ Symbols</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveInspectorTab('ai')}
-                className={`py-3 px-2 text-center border-b-2 transition cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeInspectorTab === 'ai'
-                    ? 'border-indigo-500 text-indigo-400 bg-[#0b0f1a]'
-                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                onClick={() => setLeftDockTab('vault')}
+                title="1,600+ Vector Symbol Vault & Semantic Filter"
+                className={`w-full py-2 rounded-xl flex flex-col items-center gap-1 transition cursor-pointer ${
+                  leftDockTab === 'vault'
+                    ? 'bg-indigo-600/20 border border-indigo-500/50 text-indigo-300 shadow-inner'
+                    : 'hover:bg-white/[0.04] border border-transparent text-slate-400 hover:text-slate-200'
                 }`}
               >
-                <Bot className="w-3.5 h-3.5" />
-                <span>AI &amp; Flow Crop</span>
+                <Grid className="w-4 h-4" />
+                <span className="text-[9px] font-semibold tracking-tight">1,600+</span>
+              </button>
+
+              {/* Tab 3: AI & Flow Crop */}
+              <button
+                type="button"
+                onClick={() => setLeftDockTab('ai')}
+                title="AI & Flow Crop Settings"
+                className={`w-full py-2 rounded-xl flex flex-col items-center gap-1 transition cursor-pointer ${
+                  leftDockTab === 'ai'
+                    ? 'bg-indigo-600/20 border border-indigo-500/50 text-indigo-300 shadow-inner'
+                    : 'hover:bg-white/[0.04] border border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <Sparkles className="w-4 h-4" />
+                <span className="text-[9px] font-semibold tracking-tight">AI Crop</span>
               </button>
             </div>
 
-            {/* Tab Contents */}
-            <div className="p-4 space-y-5 flex-1 overflow-y-auto max-h-[70vh]">
-              {activeInspectorTab === 'identity' && (
-                <>
-                  {/* Curated Color Palette */}
-                  <PaletteInspector
-                    state={state}
-                    onChange={handleUpdatePatch}
-                    onCyclePalette={handleCyclePalette}
-                  />
+            {/* Bottom Rail Utilities: Vector Guides & Atom 80% Safe Zone */}
+            <div className="flex flex-col items-center gap-2 w-full px-1.5">
+              <button
+                type="button"
+                onClick={() => setShowVectorGuides((p) => !p)}
+                title="Toggle Vector Bezier Anchor Nodes"
+                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+                  showVectorGuides
+                    ? 'bg-indigo-500/15 border-indigo-500/40 text-indigo-300'
+                    : 'bg-[#101522] border-white/[0.07] text-slate-400 hover:text-white'
+                }`}
+              >
+                <Crosshair className="w-4 h-4" />
+              </button>
 
-                  {/* Typography & Hierarchy */}
-                  <div className="pt-3 border-t border-[#1a2233]">
-                    <TypographyInspector state={state} onChange={handleUpdatePatch} />
+              <button
+                type="button"
+                onClick={() => setShowSafeGrid((p) => !p)}
+                title="Toggle Atom 80% Safe Crop Overlay"
+                className={`w-10 h-10 rounded-xl border flex items-center justify-center transition cursor-pointer ${
+                  showSafeGrid
+                    ? 'bg-amber-500/20 border-amber-500/50 text-amber-300'
+                    : 'bg-[#101522] border-white/[0.07] text-slate-400 hover:text-amber-300'
+                }`}
+              >
+                <Maximize2 className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          {/* 268px Navigator Drawer */}
+          <div className="w-[268px] bg-[#0B0E17]/90 border-r border-white/[0.07] flex flex-col h-full overflow-hidden">
+            {/* DRAWER VIEW 1: 10 BESPOKE AGENCY CONCEPTS */}
+            {leftDockTab === 'concepts' && (
+              <Variants10Board
+                state={state}
+                onSelectVariant={handleSelectVariant}
+                remixMode={remixMode}
+                onChangeRemixMode={handleChangeRemixMode}
+                onRemixVariants={handleRemixVariants}
+              />
+            )}
+
+            {/* DRAWER VIEW 2: 1,600+ SYMBOL VAULT & SEMANTIC MORPHEMES */}
+            {leftDockTab === 'vault' && (
+              <div className="flex flex-col h-full overflow-hidden">
+                <div className="p-3 border-b border-white/[0.07] shrink-0 space-y-2.5 bg-[#090C13]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-extrabold uppercase tracking-wider text-indigo-300">
+                      1,600+ Symbol Vault
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setIsVaultOpen(true)}
+                      className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
+                    >
+                      Full Modal ↗
+                    </button>
                   </div>
-
-                  {/* Emblem Vector Construction */}
-                  <div className="pt-3 border-t border-[#1a2233]">
-                    <EmblemInspector
-                      state={state}
-                      onChange={handleUpdatePatch}
-                      onOpenVault={() => setIsVaultOpen(true)}
+                  <div className="relative">
+                    <Search className="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2" />
+                    <input
+                      type="text"
+                      value={vaultSearchQuery}
+                      onChange={(e) => setVaultSearchQuery(e.target.value)}
+                      placeholder="Filter symbols (e.g. chart, shield)..."
+                      className="w-full bg-[#06080D] border border-white/[0.07] focus:border-indigo-500 rounded-lg pl-8 pr-2.5 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none"
                     />
                   </div>
+                </div>
 
-                  {/* 10 Symbols for Domain (Concept 4 + Word1 3 + Word2 3) */}
-                  <div className="pt-3 border-t border-[#1a2233]">
-                    <DomainSymbolsSelector
-                      currentDomain={state.domain}
-                      icons10={state.icons10}
-                      iconGroups={state.iconGroups}
-                      activeIcon={state.activeIcon}
-                      onSelectIcon={(ico) => setState((prev) => ({ ...prev, activeIcon: ico, customSvgPath: undefined }))}
-                    />
-                  </div>
-
-                  {/* Precision Optical Proportions */}
-                  <OpticalSliders
-                    state={state}
-                    onChange={handleUpdatePatch}
-                    onReset={handleResetSliders}
+                <div className="flex-1 overflow-y-auto p-3 space-y-4">
+                  {/* 10 Curated Semantic Morpheme Symbols (Concept 4 + Word1 3 + Word2 3) */}
+                  <DomainSymbolsSelector
+                    currentDomain={state.domain}
+                    icons10={state.icons10}
+                    iconGroups={state.iconGroups}
+                    activeIcon={state.activeIcon}
+                    onSelectIcon={(ico) =>
+                      setState((prev) => ({ ...prev, activeIcon: ico, customSvgPath: undefined }))
+                    }
                   />
-                </>
-              )}
 
-              {activeInspectorTab === 'ai' && (
+                  {/* Extended Semantic Pool Grid */}
+                  <div className="pt-2 border-t border-white/[0.07] space-y-2">
+                    <div className="flex items-center justify-between text-[10px] text-slate-400">
+                      <span className="font-bold text-slate-300">
+                        Semantic Pool ({filteredDrawerIcons.length})
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsVaultOpen(true)}
+                        className="text-indigo-400 hover:underline cursor-pointer"
+                      >
+                        Browse All 1,638
+                      </button>
+                    </div>
+                    <div className="grid grid-cols-4 gap-1.5">
+                      {filteredDrawerIcons.map((ico) => {
+                        const IconComp = resolveLucideIcon(ico);
+                        const isSelected = ico.toLowerCase() === state.activeIcon.toLowerCase();
+                        return (
+                          <button
+                            key={ico}
+                            type="button"
+                            onClick={() =>
+                              setState((prev) => ({
+                                ...prev,
+                                activeIcon: ico,
+                                customSvgPath: undefined,
+                              }))
+                            }
+                            title={ico}
+                            className={`p-1.5 rounded-lg text-[10px] font-mono flex flex-col items-center justify-center gap-1 border transition cursor-pointer ${
+                              isSelected
+                                ? 'bg-indigo-600 text-white border-indigo-400 shadow-md'
+                                : 'bg-[#06080D] hover:bg-[#101522] text-slate-300 border-white/[0.07]'
+                            }`}
+                          >
+                            <IconComp size={15} strokeWidth={2.1} />
+                            <span className="text-[8px] truncate w-full text-center">
+                              {ico.length > 7 ? ico.slice(0, 6) + '…' : ico}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* DRAWER VIEW 3: AI & FLOW CROP */}
+            {leftDockTab === 'ai' && (
+              <div className="flex flex-col h-full overflow-y-auto p-3 space-y-3">
+                <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/25 space-y-1.5">
+                  <div className="text-xs font-bold text-indigo-300">AI &amp; Flow Smart Crop</div>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Automatically enforces Atom Marketplace 80% safe zone padding and optical weight balancing across 1500×900 and 1200×1200 exports.
+                  </p>
+                </div>
+
+                <div className="space-y-2 p-2.5 rounded-xl bg-[#06080D] border border-white/[0.07]">
+                  <label className="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                    <span>Atom Crop Zone (80%)</span>
+                    <input
+                      type="checkbox"
+                      checked={showSafeGrid}
+                      onChange={(e) => setShowSafeGrid(e.target.checked)}
+                      className="rounded border-slate-600 bg-[#06080D] text-indigo-500 cursor-pointer"
+                    />
+                  </label>
+                  <label className="flex items-center justify-between text-xs text-slate-300 cursor-pointer">
+                    <span>Bezier Vector Anchor Handles</span>
+                    <input
+                      type="checkbox"
+                      checked={showVectorGuides}
+                      onChange={(e) => setShowVectorGuides(e.target.checked)}
+                      className="rounded border-slate-600 bg-[#06080D] text-indigo-500 cursor-pointer"
+                    />
+                  </label>
+                </div>
+
                 <AiAndFlowPanel
                   state={state}
                   onUpdateRaster={(dataUrl) =>
@@ -540,41 +673,113 @@ export default function App() {
                     }))
                   }
                 />
-              )}
-            </div>
-
-            {/* Bottom Quick Action */}
-            <div className="p-4 border-t border-[#1b2333] bg-[#080b13]">
-              <button
-                type="button"
-                onClick={() => downloadBrandKitZip(state)}
-                className="w-full py-3 bg-gradient-to-r from-indigo-500 via-violet-500 to-emerald-400 hover:opacity-95 text-slate-950 font-extrabold text-sm rounded-xl shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 transition cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-                <span>Download Complete Brand Kit (.ZIP)</span>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
         </aside>
 
-        {/* RIGHT COLUMN: DUAL MASTER CANVASES & 10 CONCEPTS (8 COLS) */}
-        <section className="lg:col-span-8 flex flex-col gap-5">
-          {/* Dual Master Canvases & Mockup Previews */}
-          <DualCanvasStage
-            state={state}
-            onUpdateState={handleUpdatePatch}
-            remixMode={remixMode}
-            onChangeRemixMode={handleChangeRemixMode}
-            onRemixVariants={handleRemixVariants}
-          />
+        {/* ZONE 3: CENTER INFINITE VECTOR VIEWPORT */}
+        <DualCanvasStage
+          state={state}
+          onUpdateState={handleUpdatePatch}
+          showSafeGrid={showSafeGrid}
+          onToggleSafeGrid={() => setShowSafeGrid((p) => !p)}
+          showVectorGuides={showVectorGuides}
+          onToggleVectorGuides={() => setShowVectorGuides((p) => !p)}
+          onCyclePalette={handleCyclePalette}
+        />
 
-          {/* 10 Bespoke Agency Concepts Board */}
-          <Variants10Board
-            state={state}
-            onSelectVariant={handleSelectVariant}
-          />
-        </section>
-      </main>
+        {/* ZONE 4: RIGHT PRECISION INSPECTOR (320px, Zero Clipping + Sticky Footer) */}
+        <aside className="w-[320px] bg-[#0B0E17] border-l border-white/[0.07] flex flex-col h-full shrink-0 z-20">
+          {/* Inspector Header */}
+          <div className="px-3.5 py-2.5 border-b border-white/[0.07] flex items-center justify-between shrink-0 bg-[#090C13]">
+            <div className="flex items-center gap-1.5">
+              <Sliders className="w-3.5 h-3.5 text-indigo-400" />
+              <span className="text-xs font-extrabold tracking-tight text-white">
+                Vector &amp; Type Inspector
+              </span>
+            </div>
+            <span className="text-[10px] font-mono text-indigo-300 bg-indigo-500/10 border border-indigo-500/25 px-1.5 py-0.5 rounded truncate max-w-[125px]">
+              #{state.activeVariantIndex + 1} · {state.activeIcon}
+            </span>
+          </div>
+
+          {/* Inspector Scrollable Body */}
+          <div className="flex-1 overflow-y-auto divide-y divide-white/[0.07]">
+            {/* Sections 1 & 2: Wordmark & Hierarchy + Typography & Case Matrix */}
+            <TypographyInspector state={state} onChange={handleUpdatePatch} />
+
+            {/* Section 3: Vector Emblem Architecture */}
+            <EmblemInspector
+              state={state}
+              onChange={handleUpdatePatch}
+              onOpenVault={() => setIsVaultOpen(true)}
+            />
+
+            {/* Domain Curated 10 Symbols (Concept 4 + Word 1 3 + Word 2 3) */}
+            <div className="p-3.5">
+              <DomainSymbolsSelector
+                currentDomain={state.domain}
+                icons10={state.icons10}
+                iconGroups={state.iconGroups}
+                activeIcon={state.activeIcon}
+                onSelectIcon={(ico) =>
+                  setState((prev) => ({ ...prev, activeIcon: ico, customSvgPath: undefined }))
+                }
+              />
+            </div>
+
+            {/* Precision Optical Proportions */}
+            <div className="p-3.5">
+              <OpticalSliders
+                state={state}
+                onChange={handleUpdatePatch}
+                onReset={handleResetSliders}
+              />
+            </div>
+          </div>
+
+          {/* Sticky Bottom Action Footer */}
+          <div className="p-3 border-t border-white/[0.07] bg-[#06080D]/95 shrink-0 space-y-2">
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={handleCopyFooterSvg}
+                className="py-1.5 px-2.5 rounded-lg bg-[#101522] hover:bg-white/[0.06] border border-white/[0.07] text-[11px] font-bold text-slate-200 flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                {copiedFooterSvg ? (
+                  <>
+                    <Check className="w-3.5 h-3.5 text-emerald-400" />
+                    <span className="text-emerald-300">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Code className="w-3.5 h-3.5 text-cyan-400" />
+                    <span>Copy SVG Code</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => downloadSvg(state, `${state.domain || 'logo'}-vector.svg`)}
+                className="py-1.5 px-2.5 rounded-lg bg-[#101522] hover:bg-white/[0.06] border border-white/[0.07] text-[11px] font-bold text-slate-200 flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Download className="w-3.5 h-3.5 text-indigo-400" />
+                <span>Export Vector SVG</span>
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => downloadBrandKitZip(state)}
+              className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-extrabold text-xs tracking-tight flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition cursor-pointer"
+            >
+              <Download className="w-4 h-4 stroke-[2.5]" />
+              <span>Download Complete Brand Kit (.ZIP)</span>
+            </button>
+          </div>
+        </aside>
+      </div>
 
       {/* 3. Portfolio Modal (223 Domains) */}
       <PortfolioModal
@@ -594,7 +799,9 @@ export default function App() {
         nicheLabel={state.nicheLabel}
         icons10={state.icons10}
         iconGroups={state.iconGroups}
-        onSelectIcon={(ico) => setState((prev) => ({ ...prev, activeIcon: ico, customSvgPath: undefined }))}
+        onSelectIcon={(ico) =>
+          setState((prev) => ({ ...prev, activeIcon: ico, customSvgPath: undefined }))
+        }
         onClose={() => setIsVaultOpen(false)}
       />
     </div>

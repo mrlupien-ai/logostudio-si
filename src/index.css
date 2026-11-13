@@ -1,47 +1,124 @@
 @import "tailwindcss";
-@custom-variant dark (&:where(.dark, .dark *));
 
 @layer base {
-  :root {
-    --bg-studio: #07090e;
-    --panel-bg: #0d121f;
-    --border-col: #1e293b;
-  }
-
   body {
+    background-color: #06080D;
+    color: #F8FAFC;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-studio);
-    color: #f1f5f9;
+    overflow-x: hidden;
   }
 }
 
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.16);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.32);
+}
+
+/* Infinite Studio Blueprint Grid */
+.infinite-canvas-bg {
+  background-color: #05070B;
+  background-image:
+    radial-gradient(rgba(148, 163, 184, 0.14) 1px, transparent 1px),
+    linear-gradient(to right, rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 20px 20px, 100px 100px, 100px 100px;
+}
+
+/* Transparent Checkerboard Surface */
+.checkerboard-surface,
 .canvas-checkerboard {
-  background-image: 
-    linear-gradient(45deg, #1e293b 25%, transparent 25%), 
-    linear-gradient(-45deg, #1e293b 25%, transparent 25%), 
-    linear-gradient(45deg, transparent 75%, #1e293b 75%), 
-    linear-gradient(-45deg, transparent 75%, #1e293b 75%);
+  background-color: #f8fafc;
+  background-image:
+    linear-gradient(45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(-45deg, #e2e8f0 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, #e2e8f0 75%),
+    linear-gradient(-45deg, transparent 75%, #e2e8f0 75%);
   background-size: 16px 16px;
-  background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+  background-position: 0 0, 0 8px, 8px -8px, -8px 0;
 }
 
 .canvas-grid-dot {
-  background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+  background-image: radial-gradient(#cbd5e1 1px, transparent 1px);
   background-size: 16px 16px;
 }
 
-/* Custom scrollbars */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+/* Rulers */
+.ruler-x {
+  background-image: repeating-linear-gradient(
+    to right,
+    rgba(148, 163, 184, 0.25) 0px,
+    rgba(148, 163, 184, 0.25) 1px,
+    transparent 1px,
+    transparent 10px
+  );
 }
-::-webkit-scrollbar-track {
-  background: #090d16;
+
+.ruler-y {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(148, 163, 184, 0.25) 0px,
+    rgba(148, 163, 184, 0.25) 1px,
+    transparent 1px,
+    transparent 10px
+  );
 }
-::-webkit-scrollbar-thumb {
-  background: #232d42;
-  border-radius: 4px;
+
+/* Range Input Customization */
+input[type='range'] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #384666;
+
+input[type='range']::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.2);
+}
+
+input[type='range']::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #6366F1;
+  border: 2px solid #FFFFFF;
+  margin-top: -4px;
+  box-shadow: 0 0 8px rgba(99, 102, 241, 0.6);
+  transition: transform 0.15s ease;
+}
+
+input[type='range']::-webkit-slider-thumb:hover {
+  transform: scale(1.18);
+}
+
+/* Vector Anchor Node */
+.vector-node {
+  width: 7px;
+  height: 7px;
+  background: #FFFFFF;
+  border: 1.5px solid #6366F1;
+  position: absolute;
+  z-index: 20;
+}
+
+/* Subtle Glow Accent */
+.btn-glow {
+  box-shadow: 0 0 20px -4px rgba(99, 102, 241, 0.55);
 }

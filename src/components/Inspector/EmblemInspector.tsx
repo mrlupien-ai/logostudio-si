@@ -44,12 +44,10 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
       const text = event.target?.result as string;
       if (!text) return;
 
-      // Extract path d attribute or svg contents
       const pathMatch = text.match(/<path[^>]*d="([^"]+)"/i);
       if (pathMatch && pathMatch[1]) {
         onChange({ customSvgPath: pathMatch[1] });
       } else {
-        // Fallback: extract any d attributes
         const allPaths = Array.from(text.matchAll(/d="([^"]+)"/g)).map((m) => m[1]);
         if (allPaths.length > 0) {
           onChange({ customSvgPath: allPaths.join(' ') });
@@ -85,23 +83,25 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
   };
 
   return (
-    <div className="space-y-3.5">
-      <div className="flex justify-between items-center">
-        <label className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-          <Shield className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Vector Emblem Architecture</span>
-        </label>
+    <div className="p-3.5 space-y-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-1.5">
+          <Shield className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-300">
+            Vector Emblem Architecture
+          </span>
+        </div>
         <button
           type="button"
           onClick={onOpenVault}
-          className="text-[10px] font-semibold text-indigo-400 hover:text-indigo-300 transition cursor-pointer"
+          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline cursor-pointer"
         >
           Change Symbol ({state.activeIcon})
         </button>
       </div>
 
-      {/* Emblem Construction Style */}
-      <div className="grid grid-cols-2 gap-2.5">
+      {/* Construction Style & Master Lockup Layout */}
+      <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="block text-[10px] font-semibold text-slate-400 mb-1">
             Construction Style
@@ -109,7 +109,7 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
           <select
             value={currentSelectValue}
             onChange={handleConstructionChange}
-            className="w-full bg-[#06080f] border border-[#232c42] rounded-lg px-2.5 py-1.5 text-xs text-white font-medium outline-none focus:border-indigo-500 cursor-pointer"
+            className="w-full bg-[#06080D] border border-white/[0.07] rounded-lg px-2 py-1.5 text-[11px] font-semibold text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
           >
             <optgroup label="This Domain (10)">
               {domainConstructions.map((spec, idx) => (
@@ -149,7 +149,7 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
           <select
             value={state.mainLayout}
             onChange={(e) => onChange({ mainLayout: e.target.value as MainLayoutMode })}
-            className="w-full bg-[#06080f] border border-[#232c42] rounded-lg px-2.5 py-1.5 text-xs text-white font-medium outline-none focus:border-indigo-500 cursor-pointer"
+            className="w-full bg-[#06080D] border border-white/[0.07] rounded-lg px-2 py-1.5 text-[11px] font-semibold text-white focus:outline-none focus:border-indigo-500 cursor-pointer"
           >
             <option value="horizontal">Horizontal (Icon Left)</option>
             <option value="stacked">Centered Stacked (Icon Top)</option>
@@ -157,12 +157,14 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
         </div>
       </div>
 
-      {/* Stroke width & Rotation */}
-      <div className="grid grid-cols-2 gap-3 pt-1 border-t border-[#1a2233]">
+      {/* Sliders: Stroke Width & Rotation */}
+      <div className="space-y-2.5 pt-1">
         <div>
-          <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
-            <span>Icon Stroke Width</span>
-            <span className="text-white font-mono">{state.iconStrokeWidth.toFixed(1)}px</span>
+          <div className="flex items-center justify-between text-[10px] mb-1">
+            <span className="font-semibold text-slate-400">Icon Stroke Width (px)</span>
+            <span className="font-mono font-bold text-indigo-300 bg-indigo-500/10 px-1.5 py-0.2 rounded">
+              {state.iconStrokeWidth.toFixed(1)} px
+            </span>
           </div>
           <input
             type="range"
@@ -171,14 +173,28 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
             step="0.1"
             value={state.iconStrokeWidth}
             onChange={(e) => onChange({ iconStrokeWidth: parseFloat(e.target.value) })}
-            className="w-full h-1.5 bg-slate-800 rounded-lg cursor-pointer accent-indigo-500"
+            className="w-full"
           />
         </div>
 
         <div>
-          <div className="flex justify-between text-[10px] text-slate-400 mb-0.5">
-            <span>Icon Rotation</span>
-            <span className="text-white font-mono">{state.iconRotation}°</span>
+          <div className="flex items-center justify-between text-[10px] mb-1">
+            <span className="font-semibold text-slate-400">Icon Rotation (°)</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono font-bold text-cyan-300 bg-cyan-500/10 px-1.5 py-0.2 rounded">
+                {state.iconRotation}°
+              </span>
+              {[0, -15, 45, 90].map((deg) => (
+                <button
+                  key={deg}
+                  type="button"
+                  onClick={() => onChange({ iconRotation: deg < 0 ? 360 + deg : deg })}
+                  className="text-[9px] font-mono px-1 py-0.2 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white cursor-pointer"
+                >
+                  {deg}°
+                </button>
+              ))}
+            </div>
           </div>
           <div className="flex items-center gap-1.5">
             <input
@@ -188,13 +204,13 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
               step="15"
               value={state.iconRotation}
               onChange={(e) => onChange({ iconRotation: parseInt(e.target.value, 10) })}
-              className="flex-1 h-1.5 bg-slate-800 rounded-lg cursor-pointer accent-indigo-500"
+              className="flex-1"
             />
             <button
               type="button"
               onClick={() => onChange({ iconRotation: (state.iconRotation + 90) % 360 })}
-              className="p-1 rounded bg-[#06080f] hover:bg-slate-800 text-slate-300 border border-[#232c42] transition cursor-pointer"
-              title="Rotate 90 degrees"
+              className="p-1 rounded bg-[#06080D] hover:bg-slate-800 text-slate-300 border border-white/[0.07] transition cursor-pointer"
+              title="Rotate +90 degrees"
             >
               <RotateCw className="w-3 h-3" />
             </button>
@@ -203,15 +219,15 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
       </div>
 
       {/* Flip Horizontal / Vertical & Custom SVG */}
-      <div className="flex items-center justify-between pt-1 border-t border-[#1a2233]">
-        <div className="flex items-center gap-2">
+      <div className="flex items-center justify-between pt-1.5 border-t border-white/[0.06]">
+        <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => onChange({ iconFlipH: !state.iconFlipH })}
-            className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg border flex items-center gap-1 transition cursor-pointer ${
+            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border flex items-center gap-1 transition cursor-pointer ${
               state.iconFlipH
                 ? 'bg-indigo-600 text-white border-indigo-400'
-                : 'bg-[#06080f] text-slate-400 border-[#232c42] hover:text-white'
+                : 'bg-[#06080D] text-slate-400 border-white/[0.07] hover:text-white'
             }`}
           >
             <FlipHorizontal className="w-3 h-3" />
@@ -220,10 +236,10 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
           <button
             type="button"
             onClick={() => onChange({ iconFlipV: !state.iconFlipV })}
-            className={`px-2.5 py-1 text-[10px] font-semibold rounded-lg border flex items-center gap-1 transition cursor-pointer ${
+            className={`px-2 py-1 text-[10px] font-semibold rounded-lg border flex items-center gap-1 transition cursor-pointer ${
               state.iconFlipV
                 ? 'bg-indigo-600 text-white border-indigo-400'
-                : 'bg-[#06080f] text-slate-400 border-[#232c42] hover:text-white'
+                : 'bg-[#06080D] text-slate-400 border-white/[0.07] hover:text-white'
             }`}
           >
             <FlipVertical className="w-3 h-3" />
@@ -231,7 +247,6 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
           </button>
         </div>
 
-        {/* Custom SVG Path Upload */}
         <div>
           <input
             ref={fileInputRef}
@@ -244,16 +259,16 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
             <button
               type="button"
               onClick={() => onChange({ customSvgPath: undefined })}
-              className="px-2.5 py-1 text-[10px] font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-lg flex items-center gap-1 transition cursor-pointer"
+              className="px-2 py-1 text-[10px] font-semibold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 rounded-lg flex items-center gap-1 transition cursor-pointer"
             >
               <Trash2 className="w-3 h-3" />
-              <span>Reset Custom SVG</span>
+              <span>Reset SVG</span>
             </button>
           ) : (
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
-              className="px-2.5 py-1 text-[10px] font-semibold text-slate-300 bg-[#06080f] hover:bg-slate-800 border border-[#232c42] rounded-lg flex items-center gap-1 transition cursor-pointer"
+              className="px-2 py-1 text-[10px] font-semibold text-slate-300 bg-[#06080D] hover:bg-slate-800 border border-white/[0.07] rounded-lg flex items-center gap-1 transition cursor-pointer"
               title="Upload your own custom vector SVG icon"
             >
               <Upload className="w-3 h-3 text-indigo-400" />

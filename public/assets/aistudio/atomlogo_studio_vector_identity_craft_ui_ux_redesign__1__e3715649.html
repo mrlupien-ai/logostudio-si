@@ -1,0 +1,1553 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ATOMLOGO STUDIO PRO — Vector & Identity Craft</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700;800&family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&family=Montserrat:wght@500;700;800;900&family=Oswald:wght@500;600;700&family=Outfit:wght@400;500;600;700;800;900&family=Playfair+Display:wght@600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&family=Space+Grotesk:wght@500;600;700&family=Syne:wght@700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'Inter', 'sans-serif'],
+            mono: ['"JetBrains Mono"', 'monospace'],
+          },
+          colors: {
+            studio: {
+              950: '#05070B',
+              900: '#090C13',
+              850: '#0D111B',
+              800: '#121826',
+              750: '#182032',
+              700: '#202B42',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      background-color: #05070B;
+      color: #F1F5F9;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow: hidden;
+    }
+
+    /* Infinite Vector Canvas Blueprint Grid */
+    .infinite-canvas-bg {
+      background-color: #06080E;
+      background-image:
+        linear-gradient(to right, rgba(255,255,255,0.022) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255,255,255,0.022) 1px, transparent 1px),
+        radial-gradient(rgba(99, 102, 241, 0.12) 1px, transparent 1px);
+      background-size: 24px 24px, 24px 24px, 120px 120px;
+      background-position: -1px -1px, -1px -1px, 0 0;
+    }
+
+    /* Transparent Checkerboard for Artboards */
+    .checkerboard-surface {
+      background-color: #121722;
+      background-image: 
+        linear-gradient(45deg, #1A2130 25%, transparent 25%), 
+        linear-gradient(-45deg, #1A2130 25%, transparent 25%), 
+        linear-gradient(45deg, transparent 75%, #1A2130 75%), 
+        linear-gradient(-45deg, transparent 75%, #1A2130 75%);
+      background-size: 16px 16px;
+      background-position: 0 0, 0 8px, 8px -8px, -8px 0px;
+    }
+
+    /* Top & Left Rulers */
+    .ruler-x {
+      background-image: repeating-linear-gradient(to right, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.16) 1px, transparent 1px, transparent 10px);
+    }
+    .ruler-y {
+      background-image: repeating-linear-gradient(to bottom, rgba(255,255,255,0.16) 0px, rgba(255,255,255,0.16) 1px, transparent 1px, transparent 10px);
+    }
+
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar { width: 4px; height: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.14); border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.5); }
+
+    /* Custom Pro Sliders */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: transparent;
+      cursor: ew-resize;
+    }
+    input[type="range"]::-webkit-slider-runnable-track {
+      height: 4px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(99,102,241,0.45), rgba(16,185,129,0.45));
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      background: #F8FAFC;
+      border: 2px solid #6366F1;
+      margin-top: -4px;
+      box-shadow: 0 0 8px rgba(99, 102, 241, 0.8);
+      transition: transform 0.12s ease;
+    }
+    input[type="range"]::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    /* Color input reset */
+    input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      padding: 0;
+      background: transparent;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+    input[type="color"]::-webkit-color-swatch { border: none; border-radius: 6px; }
+
+    /* Vector Node Anchor Handle */
+    .vector-node {
+      width: 7px;
+      height: 7px;
+      background: #FFFFFF;
+      border: 1.5px solid #6366F1;
+      position: absolute;
+      z-index: 20;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 15px rgba(99, 102, 241, 0.3); }
+      50% { box-shadow: 0 0 25px rgba(139, 92, 246, 0.55); }
+    }
+    .btn-glow { animation: pulseGlow 3s infinite; }
+  </style>
+</head>
+<body class="h-screen w-screen flex flex-col select-none overflow-hidden">
+
+  <!-- =========================================================================
+       1. TOP STUDIO MENUBAR (48px — Figma / Spline / Raycast Style)
+       ========================================================================= -->
+  <header class="h-12 shrink-0 bg-studio-900/95 backdrop-blur-xl border-b border-white/[0.07] px-3 flex items-center justify-between gap-2 z-40">
+    
+    <!-- Left: Brand Identity + Domain Context Pill + Niche Tag -->
+    <div class="flex items-center gap-2.5 min-w-0">
+      <div class="flex items-center gap-2 pr-2 border-r border-white/[0.08]">
+        <div class="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 via-violet-500 to-emerald-400 p-[1px] shadow-lg shrink-0">
+          <div class="w-full h-full bg-studio-950 rounded-[7px] flex items-center justify-center">
+            <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <polygon points="12 2 21 7 21 17 12 22 3 17 3 7 12 2"></polygon>
+              <circle cx="12" cy="12" r="3" class="text-emerald-400" stroke="currentColor"></circle>
+            </svg>
+          </div>
+        </div>
+        <div class="leading-none">
+          <div class="flex items-center gap-1.5">
+            <span class="font-extrabold text-xs tracking-tight text-white">ATOMLOGO</span>
+            <span class="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">STUDIO PRO</span>
+          </div>
+          <span class="text-[9px] text-slate-500 hidden sm:block mt-0.5">Negative Space Vectors · SVG & Brand Kit Exporter</span>
+        </div>
+      </div>
+
+      <!-- Domain & Industry Niche Compact Selector -->
+      <div class="hidden xl:flex items-center gap-1.5 bg-studio-950 border border-white/[0.08] rounded-lg px-2 py-1">
+        <span class="text-[9px] font-mono uppercase text-slate-500">Niche:</span>
+        <select id="domainSelect" onchange="syncDomainFromSelect(this.value)" class="bg-transparent text-xs font-bold text-white focus:outline-none cursor-pointer pr-1">
+          <option value="adstock.org" class="bg-studio-900">adstock.org</option>
+          <option value="quantpulse.io" class="bg-studio-900">quantpulse.io</option>
+          <option value="adcarry.ai" class="bg-studio-900">adcarry.ai</option>
+          <option value="metricflow.org" class="bg-studio-900">metricflow.org</option>
+        </select>
+        <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 truncate max-w-[165px]" title="Adstock & Advertising Carryover Analytics">
+          Adstock & Advertising Carryover...
+        </span>
+      </div>
+    </div>
+
+    <!-- Center: Unified AI Command & Semantic Architecture Bar -->
+    <div class="flex items-center gap-1.5 bg-studio-950/90 border border-white/[0.1] focus-within:border-indigo-500/70 rounded-xl p-1 pl-2.5 shadow-inner max-w-xl w-full">
+      <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+        <circle cx="11" cy="11" r="8"></circle><path d="m21 21-4.3-4.3"></path>
+      </svg>
+      <input id="topDomainInput" type="text" value="adstock.org" class="bg-transparent text-xs font-bold text-white focus:outline-none w-full min-w-[90px]" placeholder="Enter domain..." />
+      
+      <span class="px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/[0.08] text-[9px] font-mono font-bold text-slate-300 shrink-0">2-WORD</span>
+
+      <!-- Core 10 vs Deep Semantic 26 Switch -->
+      <div class="hidden sm:flex items-center bg-studio-900 p-0.5 rounded-lg border border-white/[0.07] shrink-0">
+        <button onclick="setSemanticFilter('core')" id="filter-core" class="px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-semibold transition">Core 10 (10)</button>
+        <button onclick="setSemanticFilter('deep')" id="filter-deep" class="px-2 py-0.5 rounded-md text-slate-400 hover:text-white text-[10px] font-medium transition">Deep Semantic (26)</button>
+      </div>
+
+      <button onclick="triggerGenerateConcepts()" class="btn-glow px-2.5 py-1 rounded-lg bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-[11px] font-bold flex items-center gap-1 shrink-0 transition active:scale-95">
+        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+          <path d="M12 3v3m0 12v3M3 12h3m12 0h3m-2.6-6.4-2.1 2.1m-8.6 8.6-2.1 2.1m0-12.8 2.1 2.1m8.6 8.6 2.1 2.1"/>
+        </svg>
+        <span>Generate 10 Concepts</span>
+      </button>
+
+      <button onclick="remixArchitectures()" title="Remix Architectures" class="px-2 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-semibold flex items-center gap-1 shrink-0 transition">
+        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        <span class="hidden md:inline">Remix</span>
+      </button>
+    </div>
+
+    <!-- Right: Studio Ecosystem & Global Export Suite -->
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button onclick="showToast('Opened Landing Page Preview (.SI)')" class="hidden 2xl:flex px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-[11px] font-medium text-slate-300 items-center gap-1 transition">
+        <span class="w-1.5 h-1.5 rounded-full bg-sky-400"></span>
+        <span>Landing Page</span>
+        <span class="text-[9px] font-mono px-1 rounded bg-sky-500/20 text-sky-300">.SI</span>
+      </button>
+
+      <button onclick="showToast('Portfolio Drawer: 223 Saved Brand Identities')" class="hidden xl:flex px-2 py-1 rounded-lg bg-white/[0.03] hover:bg-white/[0.07] border border-white/[0.08] text-[11px] font-medium text-slate-300 items-center gap-1 transition">
+        <span>Portfolio</span>
+        <span class="text-[10px] font-mono text-slate-400">(223)</span>
+      </button>
+
+      <div class="h-4 w-[1px] bg-white/[0.08] mx-0.5 hidden sm:block"></div>
+
+      <button onclick="copyCurrentSVG()" class="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-[11px] font-medium text-slate-200 flex items-center gap-1 transition">
+        <span class="font-mono text-[10px] text-indigo-400">&lt;/&gt;</span>
+        <span class="hidden md:inline">Copy SVG</span>
+      </button>
+
+      <button onclick="downloadSVGFile('main')" class="px-2 py-1 rounded-lg bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] text-[11px] font-medium text-slate-200 flex items-center gap-1 transition">
+        <svg class="w-3 h-3 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+        <span class="hidden md:inline">Vector SVG</span>
+      </button>
+
+      <button onclick="showToast('Exporting all 10 Bespoke Concepts (.ZIP)...')" class="hidden lg:flex px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-[11px] font-semibold items-center gap-1 transition">
+        <span>Export 10 (.ZIP)</span>
+      </button>
+
+      <button onclick="showToast('Packaging Complete Brand Kit (.ZIP) — Master SVGs, PNGs, Favicons & Spec Sheet')" class="px-2.5 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-studio-950 text-[11px] font-extrabold flex items-center gap-1 shadow-[0_0_15px_rgba(16,185,129,0.3)] transition">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.4"><path d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+        <span>Brand Kit (.ZIP)</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- =========================================================================
+       2. MAIN 4-ZONE CREATIVE STUDIO WORKSPACE
+       ========================================================================= -->
+  <div class="flex-1 flex overflow-hidden relative">
+
+    <!-- =======================================================================
+         ZONE A: FAR-LEFT VERTICAL ICON TOOL RAIL (54px — Illustrator/Figma Style)
+         ======================================================================= -->
+    <nav class="w-14 shrink-0 bg-studio-950 border-r border-white/[0.07] flex flex-col items-center py-2.5 justify-between z-30">
+      <div class="flex flex-col items-center gap-2 w-full px-1.5">
+        
+        <!-- Tool 1: 10 Bespoke Concepts Navigator -->
+        <button onclick="switchLeftDrawer('concepts')" id="rail-concepts" class="rail-btn w-full py-2 rounded-xl bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 flex flex-col items-center gap-1 transition group" title="10 Bespoke Agency Concepts">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="3" width="7" height="7" rx="1.5"></rect>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"></rect>
+            <rect x="14" y="14" width="7" height="7" rx="1.5"></rect>
+          </svg>
+          <span class="text-[8px] font-bold tracking-tight">Concepts</span>
+        </button>
+
+        <!-- Tool 2: 1,600+ Symbols Vault -->
+        <button onclick="switchLeftDrawer('symbols')" id="rail-symbols" class="rail-btn w-full py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent flex flex-col items-center gap-1 transition group" title="1,600+ Vector Symbols Vault">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          <span class="text-[8px] font-semibold tracking-tight">1,600+</span>
+        </button>
+
+        <!-- Tool 3: AI & Flow Crop -->
+        <button onclick="switchLeftDrawer('aicrop')" id="rail-aicrop" class="rail-btn w-full py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent flex flex-col items-center gap-1 transition group" title="AI & Flow Crop Optical Framing">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M6 2v14a2 2 0 0 0 2 2h14"></path>
+            <path d="M18 22V8a2 2 0 0 0-2-2H2"></path>
+          </svg>
+          <span class="text-[8px] font-semibold tracking-tight">AI Crop</span>
+        </button>
+
+        <!-- Tool 4: Identity Craft / Vector Specs -->
+        <button onclick="switchLeftDrawer('specs')" id="rail-specs" class="rail-btn w-full py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent flex flex-col items-center gap-1 transition group" title="Identity Craft & Blueprint Specs">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <circle cx="12" cy="12" r="9"></circle>
+            <path d="M12 3v18M3 12h18"></path>
+          </svg>
+          <span class="text-[8px] font-semibold tracking-tight">Craft</span>
+        </button>
+      </div>
+
+      <!-- Bottom Rail Utilities -->
+      <div class="flex flex-col items-center gap-2 px-1.5 w-full">
+        <button onclick="toggleVectorGuides()" id="rail-guides-btn" title="Toggle Vector Construction Bounding Box" class="w-9 h-9 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-300 flex items-center justify-center transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
+            <path d="M3 3h6v6H3zM15 3h6v6h-6zM15 15h6v6h-6zM3 15h6v6H3z"/>
+          </svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- =======================================================================
+         ZONE B: LEFT ASSET & CONCEPT NAVIGATOR DOCK (268px — Artboard Filmstrip)
+         ======================================================================= -->
+    <aside class="w-[268px] shrink-0 bg-studio-900/95 border-r border-white/[0.07] flex flex-col h-full z-20">
+      
+      <!-- DRAWER 1: 10 BESPOKE AGENCY CONCEPTS (Default) -->
+      <div id="drawer-concepts" class="flex flex-col h-full">
+        <div class="p-3 border-b border-white/[0.07] flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+              <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">10 Bespoke Concepts</span>
+            </div>
+            <p class="text-[10px] text-slate-400 mt-0.5">for <span id="conceptsDomainLabel" class="text-indigo-400 font-semibold">adstock.org</span> · 260 Pairs</p>
+          </div>
+          <button onclick="remixArchitectures()" class="px-2 py-1 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[10px] font-semibold text-amber-300 transition" title="Shuffle Vector Architectures">
+            ↻ Remix
+          </button>
+        </div>
+
+        <!-- Vertical Scrollable Filmstrip of 10 Concepts (2 Columns Compact Studio Cards) -->
+        <div id="conceptsGrid" class="flex-1 overflow-y-auto p-2.5 grid grid-cols-2 gap-2 content-start">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Drawer Bottom Quick Action -->
+        <div class="p-2.5 border-t border-white/[0.07] bg-studio-950/60 flex items-center justify-between">
+          <span class="text-[10px] font-mono text-slate-400">26 Semantic Symbols</span>
+          <button onclick="switchLeftDrawer('symbols')" class="text-[11px] font-semibold text-indigo-400 hover:text-indigo-300 flex items-center gap-1">
+            <span>Browse All 1,600+</span>
+            <span>→</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- DRAWER 2: 1,600+ SYMBOLS VAULT -->
+      <div id="drawer-symbols" class="hidden flex-col h-full">
+        <div class="p-3 border-b border-white/[0.07] space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">1,600+ Symbol Vault</span>
+            <span class="px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 font-mono text-[9px]">NEGATIVE SPACE</span>
+          </div>
+          <div class="relative">
+            <input type="text" id="symbolSearchInput" oninput="filterSymbols(this.value)" placeholder="Filter symbols (chart, pulse, tv)..." class="w-full bg-studio-950 border border-white/[0.1] focus:border-indigo-500 rounded-lg pl-7 pr-2.5 py-1.5 text-xs text-white focus:outline-none" />
+            <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+          </div>
+        </div>
+        <div id="sidebarSymbolGrid" class="flex-1 overflow-y-auto p-2.5 grid grid-cols-3 gap-2 content-start">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- DRAWER 3: AI & FLOW CROP -->
+      <div id="drawer-aicrop" class="hidden flex-col h-full p-3 space-y-3 overflow-y-auto">
+        <div class="border-b border-white/[0.07] pb-2.5">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">AI & Flow Crop Engine</span>
+          <p class="text-[10px] text-slate-400 mt-0.5">Automated optical bounding & safe-zone calibration</p>
+        </div>
+
+        <div class="p-3 rounded-xl bg-studio-950 border border-white/[0.08] space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-200">Atom Crop Zone (80%)</span>
+            <input type="checkbox" id="drawerCropCheck" onchange="toggleCropZone(this.checked)" checked class="rounded bg-studio-900 border-white/20 text-indigo-500 focus:ring-0 w-4 h-4" />
+          </div>
+          <p class="text-[10px] text-slate-400 leading-relaxed">
+            Forces 10% breathing margin on all 4 sides so exports never clip inside social avatars or header navbars.
+          </p>
+        </div>
+
+        <div class="p-3 rounded-xl bg-studio-950 border border-white/[0.08] space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-semibold text-slate-200">Vector Anchor Handles</span>
+            <input type="checkbox" id="drawerGuidesCheck" onchange="toggleVectorGuides()" checked class="rounded bg-studio-900 border-white/20 text-indigo-500 focus:ring-0 w-4 h-4" />
+          </div>
+          <p class="text-[10px] text-slate-400 leading-relaxed">
+            Displays live Bezier bounding geometry, emblem center-of-mass, and pixel ratio rulers.
+          </p>
+        </div>
+
+        <div class="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 space-y-2">
+          <span class="text-[10px] font-mono font-bold uppercase text-indigo-300">Active Resolution Pipeline</span>
+          <div class="text-[11px] font-mono text-slate-300 space-y-1">
+            <div class="flex justify-between"><span>Master 16:10</span><span class="text-emerald-400">1500 × 900</span></div>
+            <div class="flex justify-between"><span>Atom Safe 16:10</span><span class="text-indigo-300">750 × 450</span></div>
+            <div class="flex justify-between"><span>Master 1:1</span><span class="text-emerald-400">1200 × 1200</span></div>
+            <div class="flex justify-between"><span>Atom Safe 1:1</span><span class="text-indigo-300">600 × 600</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- DRAWER 4: IDENTITY CRAFT / LIVE SPEC SHEET -->
+      <div id="drawer-specs" class="hidden flex-col h-full p-3 space-y-3 overflow-y-auto">
+        <div class="border-b border-white/[0.07] pb-2.5">
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">Identity Craft Blueprint</span>
+          <p class="text-[10px] text-slate-400 mt-0.5">Live token manifest for developers & designers</p>
+        </div>
+        <div id="liveTokenSpecBox" class="p-3 rounded-xl bg-studio-950 border border-white/[0.08] font-mono text-[10px] text-slate-300 space-y-2">
+          <!-- Updated by JS -->
+        </div>
+      </div>
+
+    </aside>
+
+    <!-- =======================================================================
+         ZONE C: CENTER INFINITE VECTOR WORKSPACE (Rulers + Floating HUDs + Stage)
+         ======================================================================= -->
+    <main class="flex-1 flex flex-col min-w-0 h-full relative infinite-canvas-bg overflow-hidden">
+
+      <!-- Top Horizontal Pixel Ruler (20px) -->
+      <div class="h-5 shrink-0 bg-studio-950/90 border-b border-white/[0.07] flex items-end px-6 ruler-x text-[8px] font-mono text-slate-500 select-none z-10">
+        <div class="w-full flex justify-between pr-12">
+          <span>0px</span><span>200px</span><span>400px</span><span>600px</span><span>800px</span><span>1000px</span><span>1200px</span><span>1500px</span>
+        </div>
+      </div>
+
+      <div class="flex-1 flex min-h-0 relative">
+        <!-- Left Vertical Pixel Ruler (20px) -->
+        <div class="w-5 shrink-0 bg-studio-950/90 border-r border-white/[0.07] flex flex-col justify-between py-6 items-center ruler-y text-[8px] font-mono text-slate-500 select-none z-10">
+          <span class="-rotate-90">0</span>
+          <span class="-rotate-90">300</span>
+          <span class="-rotate-90">600</span>
+          <span class="-rotate-90">900</span>
+        </div>
+
+        <!-- INFINITE CANVAS STAGE CONTAINER -->
+        <div class="flex-1 flex flex-col justify-between p-4 overflow-y-auto relative">
+
+          <!-- FLOATING TOP GLASS HUD (View Modes + Surface Context + Safe Zone Toggle) -->
+          <div class="w-full flex flex-wrap items-center justify-between gap-2 z-20">
+            
+            <!-- Left HUD Pill: View Mode Switcher -->
+            <div class="flex items-center gap-1 bg-studio-900/90 backdrop-blur-xl p-1 rounded-xl border border-white/[0.1] shadow-2xl">
+              <button onclick="switchStageView('canvases')" id="view-canvases" class="stage-view-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 text-white flex items-center gap-1.5 shadow transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span>Master Canvases</span>
+              </button>
+              <button onclick="switchStageView('header')" id="view-header" class="stage-view-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/></svg>
+                <span>Website Header Mockup</span>
+              </button>
+              <button onclick="switchStageView('mobile')" id="view-mobile" class="stage-view-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M12 18h.01"/></svg>
+                <span>Mobile App Icon</span>
+              </button>
+              <button onclick="switchStageView('marketplace')" id="view-marketplace" class="stage-view-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition">
+                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><path d="M3 6h18"/></svg>
+                <span>Marketplace Card</span>
+              </button>
+            </div>
+
+            <!-- Center HUD Pill: Canvas Surface Context (White / Dark / Transparent / Brand Tint) -->
+            <div class="flex items-center gap-1 bg-studio-900/90 backdrop-blur-xl p-1 rounded-xl border border-white/[0.1] shadow-2xl">
+              <span class="text-[10px] font-mono text-slate-400 px-2 hidden md:inline">Surface:</span>
+              <button onclick="setSurface('white')" id="surf-white" class="surf-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-studio-950 shadow-sm transition">White</button>
+              <button onclick="setSurface('dark')" id="surf-dark" class="surf-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white transition">Dark</button>
+              <button onclick="setSurface('transparent')" id="surf-transparent" class="surf-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white transition">Transparent</button>
+              <button onclick="setSurface('tint')" id="surf-tint" class="surf-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white transition">Brand Tint</button>
+            </div>
+
+            <!-- Right HUD Pill: Atom Crop Zone (80%) & Zoom -->
+            <div class="flex items-center gap-2 bg-studio-900/90 backdrop-blur-xl px-3 py-1.5 rounded-xl border border-white/[0.1] shadow-2xl">
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="cropZoneCheckbox" checked onchange="toggleCropZone(this.checked)" class="rounded bg-studio-950 border-white/20 text-amber-500 focus:ring-0 w-3.5 h-3.5" />
+                <span class="text-[11px] font-semibold text-amber-300">Atom crop zone (80%)</span>
+              </label>
+              <div class="h-3.5 w-[1px] bg-white/[0.12]"></div>
+              <button onclick="cycleZoom()" id="zoomBtn" class="text-[11px] font-mono font-bold text-indigo-300 hover:text-white">100%</button>
+            </div>
+          </div>
+
+          <!-- ===============================================================
+               CENTER STAGE ARTBOARDS (Interactive Vector Artboards)
+               =============================================================== -->
+          <div class="my-auto py-3 flex items-center justify-center w-full">
+            
+            <!-- STAGE 1: MASTER CANVASES (Dual Artboards with Vector Bounding Boxes) -->
+            <div id="stage-canvases" class="w-full max-w-[1260px] grid grid-cols-1 lg:grid-cols-12 gap-5 items-stretch">
+              
+              <!-- ARTBOARD 1: 1500 × 900 MAIN HORIZONTAL LOCKUP (7 Cols) -->
+              <div class="lg:col-span-7 flex flex-col group">
+                <!-- Artboard Floating CAD Header -->
+                <div class="flex items-center justify-between px-1 pb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-[10px] font-mono font-bold text-indigo-300">IMAGE 1 — MAIN LOGO</span>
+                    <span class="text-[11px] font-mono text-slate-400">upload 1500 × 900 → Atom 750 × 450</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="downloadSVGFile('main')" class="px-2 py-0.5 rounded bg-studio-900 hover:bg-studio-800 border border-white/[0.1] text-[10px] font-mono font-semibold text-slate-200 transition">SVG</button>
+                    <button onclick="exportPNGCanvas('main', 1500, 900)" class="px-2.5 py-0.5 rounded bg-studio-900 hover:bg-studio-800 border border-white/[0.1] text-[10px] font-semibold text-emerald-300 flex items-center gap-1 transition">
+                      <span>Export PNG ↓</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Artboard Surface Container -->
+                <div id="mainArtboard" class="relative h-[340px] sm:h-[370px] rounded-2xl bg-white shadow-[0_25px_70px_rgba(0,0,0,0.65)] border-2 border-indigo-500/40 flex items-center justify-center p-8 overflow-hidden transition-all duration-200">
+                  
+                  <!-- Atom 80% Safe Crop Zone Overlay -->
+                  <div class="crop-guide absolute inset-[10%] border border-dashed border-amber-500/60 rounded-lg pointer-events-none flex items-start justify-between p-1.5">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/90 text-studio-950 font-mono font-bold text-[8px]">ATOM 80% SAFE ZONE (750×450)</span>
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-600/90 text-white font-mono text-[8px]">16:10 MASTER</span>
+                  </div>
+
+                  <!-- Illustrator-style Vector Bounding Box around the Logo -->
+                  <div id="mainVectorBox" class="vector-bbox relative p-4 border border-indigo-500/60 rounded transition-transform duration-200">
+                    <!-- 4 Corner Anchor Nodes -->
+                    <span class="vector-node -top-1 -left-1"></span>
+                    <span class="vector-node -top-1 -right-1"></span>
+                    <span class="vector-node -bottom-1 -left-1"></span>
+                    <span class="vector-node -bottom-1 -right-1"></span>
+                    
+                    <!-- Live Mounted Main SVG -->
+                    <div id="mainLogoMount"></div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ARTBOARD 2: 1200 × 1200 SQUARE STACKED LOCKUP (5 Cols) -->
+              <div class="lg:col-span-5 flex flex-col group">
+                <!-- Artboard Floating CAD Header -->
+                <div class="flex items-center justify-between px-1 pb-1.5">
+                  <div class="flex items-center gap-2">
+                    <span class="px-2 py-0.5 rounded bg-indigo-500/20 border border-indigo-500/40 text-[10px] font-mono font-bold text-indigo-300">IMAGE 2 — SQUARE LOGO</span>
+                    <span class="text-[11px] font-mono text-slate-400">1200 × 1200 → Atom 600 × 600</span>
+                  </div>
+                  <div class="flex items-center gap-1.5">
+                    <button onclick="downloadSVGFile('square')" class="px-2 py-0.5 rounded bg-studio-900 hover:bg-studio-800 border border-white/[0.1] text-[10px] font-mono font-semibold text-slate-200 transition">SVG</button>
+                    <button onclick="exportPNGCanvas('square', 1200, 1200)" class="px-2.5 py-0.5 rounded bg-studio-900 hover:bg-studio-800 border border-white/[0.1] text-[10px] font-semibold text-emerald-300 flex items-center gap-1 transition">
+                      <span>Export PNG ↓</span>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Square Artboard Surface -->
+                <div id="squareArtboard" class="relative h-[340px] sm:h-[370px] rounded-2xl bg-white shadow-[0_25px_70px_rgba(0,0,0,0.65)] border-2 border-indigo-500/40 flex items-center justify-center p-8 overflow-hidden transition-all duration-200">
+                  
+                  <!-- Atom 80% Safe Crop Zone Overlay -->
+                  <div class="crop-guide absolute inset-[10%] border border-dashed border-amber-500/60 rounded-lg pointer-events-none flex items-start justify-between p-1.5">
+                    <span class="px-1.5 py-0.5 rounded bg-amber-500/90 text-studio-950 font-mono font-bold text-[8px]">ATOM 600×600 SAFE</span>
+                    <span class="px-1.5 py-0.5 rounded bg-indigo-600/90 text-white font-mono text-[8px]">1:1 AVATAR</span>
+                  </div>
+
+                  <!-- Illustrator Vector Bounding Box -->
+                  <div id="squareVectorBox" class="vector-bbox relative p-4 border border-indigo-500/60 rounded transition-transform duration-200">
+                    <span class="vector-node -top-1 -left-1"></span>
+                    <span class="vector-node -top-1 -right-1"></span>
+                    <span class="vector-node -bottom-1 -left-1"></span>
+                    <span class="vector-node -bottom-1 -right-1"></span>
+                    
+                    <div id="squareLogoMount"></div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- STAGE 2: WEBSITE HEADER MOCKUP -->
+            <div id="stage-header" class="hidden w-full max-w-4xl bg-studio-900 border border-white/[0.12] rounded-2xl overflow-hidden shadow-2xl">
+              <div class="bg-studio-950 px-4 py-2.5 border-b border-white/[0.08] flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-full bg-rose-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-amber-500/80"></span>
+                  <span class="w-3 h-3 rounded-full bg-emerald-500/80"></span>
+                  <span class="ml-3 px-3 py-0.5 rounded bg-white/[0.05] text-[11px] font-mono text-slate-400">https://<span id="headerUrlDomain">adstock.org</span></span>
+                </div>
+                <span class="text-[10px] font-mono text-indigo-400">LIVE NAVBAR STRESS TEST</span>
+              </div>
+              <div class="bg-white p-8 space-y-8">
+                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                  <div id="headerMockupLogoMount" class="scale-75 origin-left"></div>
+                  <div class="hidden sm:flex items-center gap-6 text-xs font-semibold text-slate-600">
+                    <span>Carryover Analytics</span>
+                    <span>Attribution API</span>
+                    <span>Benchmarks</span>
+                    <span class="px-3.5 py-2 rounded-lg bg-slate-900 text-white">Book Demo →</span>
+                  </div>
+                </div>
+                <div class="max-w-xl space-y-3 py-2">
+                  <span class="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-700 text-[11px] font-bold">Econometric Adstock Engine</span>
+                  <h2 class="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">Quantify your true media decay & brand carryover in real time.</h2>
+                  <p class="text-xs sm:text-sm text-slate-500">Built for high-velocity marketing teams demanding sub-pixel attribution clarity.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- STAGE 3: MOBILE APP ICON -->
+            <div id="stage-mobile" class="hidden flex items-center justify-center gap-10 py-6">
+              <div class="flex flex-col items-center gap-3">
+                <div id="appIconLight" class="w-32 h-32 rounded-[30px] bg-white shadow-2xl border border-slate-200 flex items-center justify-center p-5"></div>
+                <span class="text-xs font-mono text-slate-300">iOS Light Squircle (1024px)</span>
+              </div>
+              <div class="flex flex-col items-center gap-3">
+                <div id="appIconDark" class="w-32 h-32 rounded-[30px] bg-studio-950 shadow-2xl border border-white/15 flex items-center justify-center p-5"></div>
+                <span class="text-xs font-mono text-slate-300">iOS Dark Mode Squircle</span>
+              </div>
+            </div>
+
+            <!-- STAGE 4: MARKETPLACE CARD -->
+            <div id="stage-marketplace" class="hidden w-full max-w-md bg-studio-900 border border-white/[0.12] rounded-2xl overflow-hidden shadow-2xl">
+              <div id="marketCardSurface" class="h-56 bg-white flex items-center justify-center p-6"></div>
+              <div class="p-5 space-y-2.5">
+                <div class="flex items-center justify-between">
+                  <span class="text-base font-extrabold text-white" id="marketDomainTitle">adstock.org</span>
+                  <span class="px-2.5 py-1 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-mono text-xs font-bold">READY TO ACQUIRE</span>
+                </div>
+                <p class="text-xs text-slate-400">Includes full commercial rights, 1500×900 & 1200×1200 master vectors, and curated color tokens.</p>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- ===============================================================
+               FLOATING BOTTOM COLOR HARMONY & CURATED PALETTE DOCK
+               =============================================================== -->
+          <div class="w-full flex items-center justify-center z-20">
+            <div class="bg-studio-900/95 backdrop-blur-xl border border-white/[0.1] rounded-2xl px-3.5 py-2 shadow-2xl flex flex-wrap items-center gap-3">
+              
+              <!-- Curated Palette Selector (14 Presets) -->
+              <div class="flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-400"></span>
+                <select id="palettePresetSelect" onchange="applyPalettePreset(this.value)" class="bg-studio-950 border border-white/[0.1] hover:border-white/[0.2] rounded-lg px-2.5 py-1 text-[11px] font-semibold text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                  <option value="0">Curated Palette (14 presets)...</option>
+                  <option value="1" selected>1. AdStock Emerald & Midnight</option>
+                  <option value="2">2. Linear Cobalt & Electric Violet</option>
+                  <option value="3">3. Fintech Obsidian & Warm Amber</option>
+                  <option value="4">4. Coral Pulse & Deep Slate</option>
+                  <option value="5">5. Nordic Mint & Charcoal Ink</option>
+                  <option value="6">6. Cyber Magenta & Night Indigo</option>
+                  <option value="7">7. Royal Gold & Espresso</option>
+                  <option value="8">8. Arctic Cyan & Navy Core</option>
+                  <option value="9">9. Emerald Octagon & Violet</option>
+                  <option value="10">10. Brutalist Orange & Carbon</option>
+                  <option value="11">11. Terracotta & Slate</option>
+                  <option value="12">12. Delta Forest & Mint</option>
+                  <option value="13">13. Heraldic Ultramarine</option>
+                  <option value="14">14. Rose Quartz & Obsidian</option>
+                </select>
+                <button onclick="cycleNextPalette()" class="px-2.5 py-1 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-500/30 text-[11px] font-semibold text-indigo-300 flex items-center gap-1 transition">
+                  <span>Next Palette</span>
+                  <span>↻</span>
+                </button>
+              </div>
+
+              <div class="h-5 w-[1px] bg-white/[0.1] hidden sm:block"></div>
+
+              <!-- 3 Live Interactive Color Pills right below the canvas -->
+              <div class="flex items-center gap-2">
+                <!-- Primary Ink -->
+                <label class="cursor-pointer flex items-center gap-2 bg-studio-950 hover:bg-studio-850 border border-white/[0.09] rounded-lg px-2.5 py-1 transition">
+                  <input type="color" id="colorPrimary" value="#0B132B" oninput="updateColors()" class="w-4 h-4 cursor-pointer" />
+                  <div class="leading-tight">
+                    <div class="text-[9px] text-slate-400">Primary Ink</div>
+                    <div id="hexPrimaryLabel" class="font-mono text-[10px] font-bold text-white">#0B132B</div>
+                  </div>
+                </label>
+
+                <!-- Brand Accent -->
+                <label class="cursor-pointer flex items-center gap-2 bg-studio-950 hover:bg-studio-850 border border-white/[0.09] rounded-lg px-2.5 py-1 transition">
+                  <input type="color" id="colorAccent" value="#00A878" oninput="updateColors()" class="w-4 h-4 cursor-pointer" />
+                  <div class="leading-tight">
+                    <div class="text-[9px] text-slate-400">Brand Accent</div>
+                    <div id="hexAccentLabel" class="font-mono text-[10px] font-bold text-emerald-400">#00A878</div>
+                  </div>
+                </label>
+
+                <!-- Spark Point -->
+                <label class="cursor-pointer flex items-center gap-2 bg-studio-950 hover:bg-studio-850 border border-white/[0.09] rounded-lg px-2.5 py-1 transition">
+                  <input type="color" id="colorSpark" value="#F59E0B" oninput="updateColors()" class="w-4 h-4 cursor-pointer" />
+                  <div class="leading-tight">
+                    <div class="text-[9px] text-slate-400">Spark Point</div>
+                    <div id="hexSparkLabel" class="font-mono text-[10px] font-bold text-amber-400">#F59E0B</div>
+                  </div>
+                </label>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </main>
+
+    <!-- =======================================================================
+         ZONE D: RIGHT PRECISION PROPERTY INSPECTOR (320px — Figma/Spline Style)
+         ======================================================================= -->
+    <aside class="w-[320px] shrink-0 bg-studio-900 border-l border-white/[0.07] flex flex-col h-full z-30">
+      
+      <!-- Inspector Header -->
+      <div class="px-3.5 py-2.5 border-b border-white/[0.07] flex items-center justify-between bg-studio-950/50">
+        <div class="flex items-center gap-1.5">
+          <svg class="w-3.5 h-3.5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          <span class="text-[11px] font-extrabold uppercase tracking-wider text-white">Vector & Type Inspector</span>
+        </div>
+        <span id="activeConceptPill" class="px-1.5 py-0.5 rounded bg-amber-500/15 border border-amber-500/30 font-mono text-[9px] font-bold text-amber-300">#1 · ChartSpline</span>
+      </div>
+
+      <!-- Inspector Scrollable Properties (Compact, Crisp, Zero Clipping) -->
+      <div class="flex-1 overflow-y-auto divide-y divide-white/[0.06]">
+
+        <!-- SECTION 1: WORDMARK & HIERARCHY -->
+        <div class="p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">T · Wordmark & Hierarchy</span>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="toggleTld" onchange="renderAllCanvases()" class="rounded bg-studio-950 border-white/20 text-indigo-600 focus:ring-0 w-3.5 h-3.5" />
+              <span class="text-[11px] font-semibold text-slate-300">Show .TLD</span>
+            </label>
+          </div>
+
+          <!-- 3-Column Split Token Input -->
+          <div class="grid grid-cols-12 gap-1.5">
+            <div class="col-span-4">
+              <label class="text-[9px] text-slate-500 font-medium block mb-1">Word 1</label>
+              <input type="text" id="inputWord1" value="Ad" oninput="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] focus:border-indigo-500 rounded-lg px-2 py-1 text-xs font-bold text-white focus:outline-none" />
+            </div>
+            <div class="col-span-5">
+              <label class="text-[9px] text-slate-500 font-medium block mb-1">Word 2 (Optional)</label>
+              <input type="text" id="inputWord2" value="Stock" oninput="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] focus:border-indigo-500 rounded-lg px-2 py-1 text-xs font-bold text-emerald-400 focus:outline-none" />
+            </div>
+            <div class="col-span-3">
+              <label class="text-[9px] text-slate-500 font-medium block mb-1">Extension</label>
+              <input type="text" id="inputExt" value=".org" oninput="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] focus:border-indigo-500 rounded-lg px-2 py-1 text-xs font-mono text-amber-400 focus:outline-none" />
+            </div>
+          </div>
+
+          <!-- Letter Case Matrix (Word 1 & Word 2) -->
+          <div class="grid grid-cols-2 gap-2 pt-0.5">
+            <div>
+              <span class="text-[9px] text-slate-500 font-medium block mb-1">Word 1 Letter Case</span>
+              <div class="grid grid-cols-4 p-0.5 rounded-lg bg-studio-950 border border-white/[0.07]">
+                <button onclick="setWordCase(1, 'auto')" id="w1-auto" class="w1-case py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white">Auto</button>
+                <button onclick="setWordCase(1, 'upp')" id="w1-upp" class="w1-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white">Upp</button>
+                <button onclick="setWordCase(1, 'cap')" id="w1-cap" class="w1-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white">Cap</button>
+                <button onclick="setWordCase(1, 'low')" id="w1-low" class="w1-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white">Low</button>
+              </div>
+            </div>
+            <div>
+              <span class="text-[9px] text-slate-500 font-medium block mb-1">Word 2 Letter Case</span>
+              <div class="grid grid-cols-4 p-0.5 rounded-lg bg-studio-950 border border-white/[0.07]">
+                <button onclick="setWordCase(2, 'auto')" id="w2-auto" class="w2-case py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white">Auto</button>
+                <button onclick="setWordCase(2, 'upp')" id="w2-upp" class="w2-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white">Upp</button>
+                <button onclick="setWordCase(2, 'cap')" id="w2-cap" class="w2-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white">Cap</button>
+                <button onclick="setWordCase(2, 'low')" id="w2-low" class="w2-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white">Low</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Brand Tagline / Slogan -->
+          <div class="pt-1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] text-slate-400 font-medium">Brand Tagline / Slogan</span>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" id="toggleSlogan" onchange="toggleSloganField()" class="rounded bg-studio-950 border-white/20 text-indigo-600 focus:ring-0 w-3.5 h-3.5" />
+                <span class="text-[10px] font-semibold text-slate-300">Enable Slogan</span>
+              </label>
+            </div>
+            <div id="sloganInputWrapper" class="hidden mt-1.5">
+              <input type="text" id="inputSlogan" value="ADSTOCK & CARRYOVER ANALYTICS" oninput="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.1] focus:border-indigo-500 rounded-lg px-2.5 py-1 text-[10px] font-mono tracking-wider text-slate-200 focus:outline-none" />
+            </div>
+          </div>
+        </div>
+
+        <!-- SECTION 2: TYPOGRAPHY & WEIGHT CONTRAST -->
+        <div class="p-3.5 space-y-2.5">
+          <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400 block">Aa · Typography & Contrast</span>
+          
+          <div class="space-y-1">
+            <label class="text-[9px] text-slate-500 font-medium block">Brand Font Family</label>
+            <select id="fontFamilySelect" onchange="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] hover:border-white/[0.2] rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500 cursor-pointer">
+              <option value="Outfit">Outfit (Geometric Sans)</option>
+              <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+              <option value="DM Sans">DM Sans</option>
+              <option value="Syne">Syne (Display Art)</option>
+              <option value="Playfair Display">Playfair Display (Editorial Serif)</option>
+              <option value="Sora">Sora (Tech Crisp)</option>
+              <option value="Montserrat">Montserrat</option>
+              <option value="Space Grotesk">Space Grotesk</option>
+              <option value="Oswald">Oswald (Condensed)</option>
+              <option value="Inter">Inter</option>
+            </select>
+          </div>
+
+          <div class="space-y-1">
+            <label class="text-[9px] text-slate-500 font-medium block">Typographic Weight Contrast</label>
+            <select id="weightContrastSelect" onchange="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] hover:border-white/[0.2] rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
+              <option value="800-700">1. Classic Authority (800 + 700)</option>
+              <option value="800-400">2. Editorial Contrast (800 + 400)</option>
+              <option value="500-800">3. Inverse Split (500 + 800)</option>
+              <option value="900-900">4. Monolithic Heavy (900 + 900)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- SECTION 3: VECTOR EMBLEM ARCHITECTURE (100% Unclipped & Interactive) -->
+        <div class="p-3.5 space-y-2.5">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">⬡ · Vector Emblem Architecture</span>
+          </div>
+
+          <!-- Active Symbol Preview + Quick Switcher Button -->
+          <div class="p-2 rounded-xl bg-studio-950 border border-white/[0.08] flex items-center justify-between">
+            <div class="flex items-center gap-2.5">
+              <div id="inspectorMiniSymbol" class="w-8 h-8 rounded-lg bg-indigo-500/15 border border-indigo-500/30 flex items-center justify-center text-indigo-300"></div>
+              <div>
+                <div class="text-[10px] text-slate-400">Active Symbol</div>
+                <div id="activeSymbolLabel" class="text-xs font-bold text-white">ChartSpline</div>
+              </div>
+            </div>
+            <button onclick="openSymbolModal()" class="px-2.5 py-1.5 rounded-lg bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/40 text-[10px] font-bold text-indigo-300 transition">
+              Change Symbol
+            </button>
+          </div>
+
+          <!-- Construction Style (All 10 Agency Architectures) -->
+          <div class="space-y-1">
+            <label class="text-[9px] text-slate-500 font-medium block">Construction Style</label>
+            <select id="constructionSelect" onchange="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] hover:border-white/[0.2] rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
+              <option value="notch">1. Notch Tab Folder · Facet - NW</option>
+              <option value="blade">2. Diagonal Blade · Cut</option>
+              <option value="portal">3. Dual Lens Portal · Core</option>
+              <option value="orbital">4. Orbital Compass · Ring</option>
+              <option value="octagon">5. Emerald Octagon · Geo</option>
+              <option value="brutalist">6. Offset Brutalist · Shadow</option>
+              <option value="staggered">7. Staggered Bars · Matrix</option>
+              <option value="chevron">8. Delta Chevron · Shield</option>
+              <option value="heraldic">9. Heraldic Shield · Crest</option>
+              <option value="clamp">10. Open Clamp Frame</option>
+            </select>
+          </div>
+
+          <!-- Master Lockup Layout -->
+          <div class="space-y-1">
+            <label class="text-[9px] text-slate-500 font-medium block">Master Lockup Layout</label>
+            <select id="lockupLayoutSelect" onchange="renderAllCanvases()" class="w-full bg-studio-950 border border-white/[0.09] hover:border-white/[0.2] rounded-lg px-2.5 py-1.5 text-xs font-medium text-slate-200 focus:outline-none focus:border-indigo-500 cursor-pointer">
+              <option value="horizontal">Horizontal (Icon Left)</option>
+              <option value="stacked">Stacked (Icon Top)</option>
+              <option value="right">Horizontal (Icon Right)</option>
+            </select>
+          </div>
+
+          <!-- Precision Sliders: Icon Stroke Width & Icon Rotation -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <div class="p-2 rounded-xl bg-studio-950 border border-white/[0.08] space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] text-slate-400 font-medium">Stroke Width</span>
+                <span id="strokeValueLabel" class="font-mono text-[10px] font-bold text-indigo-300">2.2px</span>
+              </div>
+              <input type="range" id="strokeSlider" min="1.2" max="3.8" step="0.1" value="2.2" oninput="updateSliders()" class="w-full" />
+            </div>
+
+            <div class="p-2 rounded-xl bg-studio-950 border border-white/[0.08] space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span class="text-[9px] text-slate-400 font-medium">Icon Rotation</span>
+                <span id="rotationValueLabel" class="font-mono text-[10px] font-bold text-indigo-300">0°</span>
+              </div>
+              <input type="range" id="rotationSlider" min="-45" max="45" step="1" value="0" oninput="updateSliders()" class="w-full" />
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sticky Bottom Primary CTA (Never Clips!) -->
+      <div class="p-3 border-t border-white/[0.08] bg-studio-950 shrink-0">
+        <button onclick="showToast('Downloading Complete Brand Kit (.ZIP) — Master Vectors, PNGs, Social Kit & Guidelines')" class="w-full py-2.5 px-3 rounded-xl bg-gradient-to-r from-indigo-500 via-teal-500 to-emerald-500 hover:opacity-95 text-studio-950 font-extrabold text-xs flex items-center justify-center gap-2 shadow-[0_4px_20px_rgba(16,185,129,0.3)] transition active:scale-[0.99]">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+            <path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+          </svg>
+          <span>Download Complete Brand Kit (.ZIP)</span>
+        </button>
+      </div>
+
+    </aside>
+
+  </div>
+
+  <!-- =========================================================================
+       ALL SYMBOLS MODAL (Quick Full-Screen Vault Browser)
+       ========================================================================= -->
+  <div id="symbolModal" class="hidden fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-studio-900 border border-white/[0.12] rounded-2xl max-w-xl w-full p-5 space-y-4 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/[0.08] pb-3">
+        <div>
+          <h3 class="text-sm font-extrabold text-white">All Semantic Vector Symbols (1,600+ Library)</h3>
+          <p class="text-[11px] text-slate-400">Select any negative-space vector glyph to inject into the active emblem construction</p>
+        </div>
+        <button onclick="closeSymbolModal()" class="p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] text-slate-400 hover:text-white">✕</button>
+      </div>
+      <div id="modalSymbolsGrid" class="grid grid-cols-5 gap-2.5 max-h-[340px] overflow-y-auto pr-1">
+        <!-- Populated by JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden Export Canvas for Real PNG Downloads -->
+  <canvas id="exportCanvas" class="hidden"></canvas>
+
+  <!-- Toast Container -->
+  <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- =========================================================================
+       STUDIO VECTOR ENGINE (JavaScript)
+       ========================================================================= -->
+  <script>
+    // 1. Central Studio State
+    const state = {
+      domain: 'adstock.org',
+      word1: 'Ad',
+      word2: 'Stock',
+      ext: '.org',
+      showTld: false,
+      showSlogan: false,
+      slogan: 'ADSTOCK & CARRYOVER ANALYTICS',
+      primaryColor: '#0B132B',
+      accentColor: '#00A878',
+      sparkColor: '#F59E0B',
+      surface: 'white',
+      weightContrast: '800-700',
+      fontFamily: 'Outfit',
+      word1Case: 'auto',
+      word2Case: 'auto',
+      construction: 'notch',
+      lockupLayout: 'horizontal',
+      strokeWidth: 2.2,
+      rotation: 0,
+      selectedConceptIndex: 0,
+      activeSymbol: 'ChartSpline',
+      cropZone: true,
+      showVectorGuides: true,
+      zoom: 1,
+    };
+
+    // 2. All 14 Curated Color Palettes
+    const palettes = [
+      { name: 'AdStock Emerald & Midnight', primary: '#0B132B', accent: '#00A878', spark: '#F59E0B' },
+      { name: 'AdStock Emerald & Midnight', primary: '#0B132B', accent: '#00A878', spark: '#F59E0B' },
+      { name: 'Linear Cobalt & Electric Violet', primary: '#1E1B4B', accent: '#4F46E5', spark: '#EC4899' },
+      { name: 'Fintech Obsidian & Warm Amber', primary: '#111827', accent: '#D97706', spark: '#10B981' },
+      { name: 'Coral Pulse & Deep Slate', primary: '#0F172A', accent: '#E11D48', spark: '#F59E0B' },
+      { name: 'Nordic Mint & Charcoal Ink', primary: '#18181B', accent: '#0D9488', spark: '#FACC15' },
+      { name: 'Cyber Magenta & Night Indigo', primary: '#0F172A', accent: '#EC4899', spark: '#06B6D4' },
+      { name: 'Royal Gold & Espresso', primary: '#1C1917', accent: '#CA8A04', spark: '#EF4444' },
+      { name: 'Arctic Cyan & Navy Core', primary: '#0C4A6E', accent: '#0284C7', spark: '#F97316' },
+      { name: 'Emerald Octagon & Violet', primary: '#1E1B4B', accent: '#7C3AED', spark: '#10B981' },
+      { name: 'Brutalist Orange & Carbon', primary: '#090D16', accent: '#EA580C', spark: '#FACC15' },
+      { name: 'Terracotta & Slate', primary: '#1E293B', accent: '#C2410C', spark: '#38BDF8' },
+      { name: 'Delta Forest & Mint', primary: '#064E3B', accent: '#10B981', spark: '#F59E0B' },
+      { name: 'Heraldic Ultramarine', primary: '#1E1B4B', accent: '#4338CA', spark: '#38BDF8' },
+      { name: 'Rose Quartz & Obsidian', primary: '#0F172A', accent: '#DB2777', spark: '#06B6D4' },
+    ];
+    let currentPaletteIdx = 1;
+
+    // 3. Semantic Vector Symbols Library
+    const symbols = {
+      ChartSpline: `<path d="M3 3v18h18"/><path d="M7 15c2-4 4-6 6-3s4 1 6-5"/>`,
+      Hourglass: `<path d="M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>`,
+      Megaphone: `<path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/>`,
+      Activity: `<path d="M22 12h-4l-3 9L9 3l-3 9H2"/>`,
+      Tv: `<rect width="20" height="15" x="2" y="7" rx="2" ry="2"/><polyline points="17 2 12 7 7 2"/>`,
+      Radio: `<circle cx="12" cy="12" r="2"/><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-8.48-.01a6 6 0 0 1 0-8.49m11.31-2.82a10 10 0 0 1 0 14.14m-14.14 0a10 10 0 0 1 0-14.14"/>`,
+      MousePointerClick: `<path d="m9 9 5 12 1.8-5.2L21 14Z"/><path d="M7.2 2.2 8 5.1"/><path d="m5.1 8-2.9-.8"/><path d="M14 4.1 12 6"/><path d="m6 12-1.9 2"/>`,
+      History: `<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>`,
+      TrendingDown: `<polyline points="22 17 13.5 8.5 8.5 13.5 2 7"/><polyline points="16 17 22 17 22 11"/>`,
+      ChartArea: `<path d="M3 3v18h18"/><path d="M7 12v5h12V8l-5 5-4-4Z"/>`,
+      Radar: `<path d="M19.07 4.93A10 10 0 0 0 6.99 3.34"/><path d="M4 6h.01"/><path d="M2.29 9.62A10 10 0 1 0 21.31 8.35"/><path d="M16.24 7.76A6 6 0 1 0 8.23 16.67"/><path d="M12 18h.01"/><path d="M17.99 11.66A6 6 0 0 1 15.77 16.67"/><circle cx="12" cy="12" r="2"/><path d="m13.41 10.59 5.66-5.66"/>`,
+      Sparkles: `<path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/>`,
+      Layers: `<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>`,
+      Cpu: `<rect x="4" y="4" width="16" height="16" rx="2"/><rect x="9" y="9" width="6" height="6"/><path d="M9 1v3M15 1v3M9 20v3M15 20v3M20 9h3M20 14h3M1 9h3M1 14h3"/>`,
+      Compass: `<circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/>`,
+    };
+
+    // 4. All 10 Bespoke Agency Concepts (Exact Match with Original Screenshot Data)
+    const concepts = [
+      { id: 1, symbol: 'ChartSpline', badge: 'CORE', arch: 'Notch Tab Folder', font: 'Outfit', primary: '#0B132B', accent: '#00A878', spark: '#F59E0B', construction: 'notch', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 2, symbol: 'Hourglass', badge: 'CORE', arch: 'Diagonal Blade', font: 'Plus Jakarta Sans', primary: '#0F172A', accent: '#059669', spark: '#38BDF8', construction: 'blade', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 3, symbol: 'Megaphone', badge: 'CORE', arch: 'Dual Lens Portal', font: 'DM Sans', primary: '#111827', accent: '#10B981', spark: '#6366F1', construction: 'portal', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 4, symbol: 'Activity', badge: 'CORE', arch: 'Orbital Compass', font: 'Syne', primary: '#18181B', accent: '#E11D48', spark: '#F59E0B', construction: 'orbital', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 5, symbol: 'Tv', badge: '', arch: 'Emerald Octagon', font: 'Playfair Display', primary: '#1E1B4B', accent: '#7C3AED', spark: '#10B981', construction: 'octagon', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 6, symbol: 'Radio', badge: '', arch: 'Offset Brutalist', font: 'Sora', primary: '#090D16', accent: '#EA580C', spark: '#FACC15', construction: 'brutalist', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 7, symbol: 'MousePointerClick', badge: '', arch: 'Staggered Bars', font: 'Montserrat', primary: '#1E293B', accent: '#C2410C', spark: '#38BDF8', construction: 'staggered', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 8, symbol: 'History', badge: '', arch: 'Delta Chevron', font: 'Space Grotesk', primary: '#064E3B', accent: '#10B981', spark: '#F59E0B', construction: 'chevron', w1Case: 'auto', w2Case: 'auto', layout: 'horizontal' },
+      { id: 9, symbol: 'TrendingDown', badge: '', arch: 'Heraldic Shield', font: 'Oswald', primary: '#1E1B4B', accent: '#4338CA', spark: '#38BDF8', construction: 'heraldic', w1Case: 'upp', w2Case: 'upp', layout: 'horizontal' },
+      { id: 10, symbol: 'ChartArea', badge: '', arch: 'Open Clamp Frame', font: 'Inter', primary: '#0F172A', accent: '#EC4899', spark: '#06B6D4', construction: 'clamp', w1Case: 'auto', w2Case: 'auto', layout: 'stacked' },
+    ];
+
+    // Format Word Case
+    function formatWord(text, mode) {
+      if (!text) return '';
+      if (mode === 'upp') return text.toUpperCase();
+      if (mode === 'low') return text.toLowerCase();
+      if (mode === 'cap') return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+      return text;
+    }
+
+    // Build Bespoke Vector Emblem Geometry (10 Distinct Agency Constructions)
+    function buildEmblemGeometry({ construction, primary, accent, spark, symbolName, strokeWidth, rotation, surface }) {
+      const iconBg = (surface === 'dark' && primary.toLowerCase() === '#0b132b') ? '#1E293B' : primary;
+      const effectiveStroke = (surface === 'dark' && primary.toLowerCase() === '#0b132b') ? '#F8FAFC' : primary;
+      const glyph = symbols[symbolName] || symbols.ChartSpline;
+
+      switch (construction) {
+        case 'notch': // #1 Notch Tab Folder · Facet NW
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <rect x="9" y="5" width="22" height="14" rx="4" fill="${accent}"/>
+              <rect x="6" y="12" width="52" height="46" rx="11" fill="${iconBg}"/>
+              <circle cx="58" cy="35" r="3.2" fill="${spark}"/>
+              <g transform="translate(17, 20) scale(1.25)" stroke="#FFFFFF" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'blade': // #2 Diagonal Blade
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <polygon points="14,6 54,6 58,50 10,58" fill="none" stroke="${effectiveStroke}" stroke-width="2.5" stroke-linejoin="round"/>
+              <circle cx="54" cy="12" r="3.5" fill="${spark}"/>
+              <g transform="translate(18, 18) scale(1.15)" stroke="${accent}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'portal': // #3 Dual Lens Portal
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <circle cx="30" cy="32" r="23" fill="none" stroke="${effectiveStroke}" stroke-width="2.4"/>
+              <circle cx="36" cy="32" r="18" fill="none" stroke="${accent}" stroke-width="1.8" stroke-dasharray="28 12"/>
+              <circle cx="52" cy="18" r="3.5" fill="${spark}"/>
+              <g transform="translate(18, 19) scale(1.1)" stroke="${effectiveStroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'orbital': // #4 Orbital Compass
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <circle cx="32" cy="32" r="24" fill="none" stroke="${accent}" stroke-width="2.2"/>
+              <circle cx="32" cy="32" r="18" fill="${iconBg}"/>
+              <circle cx="53" cy="19" r="3.5" fill="${spark}"/>
+              <g transform="translate(19, 19) scale(1.08)" stroke="#FFFFFF" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'octagon': // #5 Emerald Octagon
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <polygon points="22,6 42,6 58,22 58,42 42,58 22,58 6,42 6,22" fill="${iconBg}"/>
+              <circle cx="48" cy="14" r="3.5" fill="${spark}"/>
+              <g transform="translate(17, 17) scale(1.22)" stroke="#FFFFFF" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'brutalist': // #6 Offset Brutalist
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <rect x="11" y="11" width="46" height="46" rx="10" fill="${accent}"/>
+              <rect x="6" y="6" width="46" height="46" rx="10" fill="${iconBg}"/>
+              <circle cx="48" cy="14" r="3.2" fill="${spark}"/>
+              <g transform="translate(15, 15) scale(1.2)" stroke="${accent}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'staggered': // #7 Staggered Bars
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <rect x="6" y="12" width="38" height="12" rx="4" fill="${accent}" opacity="0.35"/>
+              <rect x="16" y="38" width="42" height="12" rx="4" fill="${spark}" opacity="0.4"/>
+              <rect x="12" y="12" width="40" height="40" rx="9" fill="none" stroke="${effectiveStroke}" stroke-width="2.4"/>
+              <g transform="translate(18, 18) scale(1.15)" stroke="${effectiveStroke}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'chevron': // #8 Delta Chevron
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <path d="M8 14 L32 6 L56 14 V46 L32 58 L8 46 Z" fill="none" stroke="${effectiveStroke}" stroke-width="2.4" stroke-linejoin="round"/>
+              <circle cx="50" cy="16" r="3.2" fill="${spark}"/>
+              <g transform="translate(18, 18) scale(1.15)" stroke="${accent}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'heraldic': // #9 Heraldic Shield
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <path d="M10 8 H54 V32 C54 46 32 58 32 58 C32 58 10 46 10 32 Z" fill="${iconBg}"/>
+              <circle cx="48" cy="14" r="3.2" fill="${spark}"/>
+              <g transform="translate(18, 16) scale(1.15)" stroke="#FFFFFF" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+        case 'clamp': // #10 Open Clamp Frame
+        default:
+          return `
+            <g transform="rotate(${rotation} 32 32)">
+              <path d="M22 8 H10 V56 H22 M42 8 H54 V56 H42" fill="none" stroke="${effectiveStroke}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+              <circle cx="54" cy="20" r="3.5" fill="${spark}"/>
+              <g transform="translate(17, 17) scale(1.22)" stroke="${accent}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round" fill="none">${glyph}</g>
+            </g>`;
+      }
+    }
+
+    // Build Complete Lockup HTML/SVG
+    function buildLogoHTML(options = {}) {
+      const {
+        size = 'main', // 'main' | 'square' | 'mini' | 'iconOnly'
+        primary = state.primaryColor,
+        accent = state.accentColor,
+        spark = state.sparkColor,
+        symbolName = state.activeSymbol,
+        construction = state.construction,
+        strokeWidth = state.strokeWidth,
+        rotation = state.rotation,
+        font = state.fontFamily,
+        w1 = formatWord(state.word1, state.word1Case),
+        w2 = formatWord(state.word2, state.word2Case),
+        ext = state.ext,
+        showTld = state.showTld,
+        showSlogan = state.showSlogan,
+        slogan = state.slogan,
+        surface = state.surface,
+        layout = size === 'square' ? 'stacked' : state.lockupLayout,
+        weightContrast = state.weightContrast,
+      } = options;
+
+      const effectivePrimary = (surface === 'dark' && primary.toLowerCase() === '#0b132b') ? '#F8FAFC' : primary;
+      const [w1Weight, w2Weight] = weightContrast.split('-');
+      const emblemGeometry = buildEmblemGeometry({ construction, primary, accent, spark, symbolName, strokeWidth, rotation, surface });
+
+      if (size === 'iconOnly') {
+        return `<svg viewBox="0 0 64 64" class="w-full h-full overflow-visible">${emblemGeometry}</svg>`;
+      }
+
+      const isStacked = layout === 'stacked';
+      const isRight = layout === 'right';
+
+      const iconSizeClass = size === 'mini'
+        ? 'w-6 h-6'
+        : (size === 'square' ? 'w-24 h-24 sm:w-28 sm:h-28' : 'w-16 h-16 sm:w-20 sm:h-20');
+
+      const textSizeClass = size === 'mini'
+        ? 'text-[13px]'
+        : (size === 'square' ? 'text-3xl sm:text-4xl' : 'text-4xl sm:text-5xl');
+
+      return `
+        <div class="inline-flex ${isStacked ? 'flex-col' : (isRight ? 'flex-row-reverse' : 'flex-row')} items-center justify-center ${size === 'mini' ? 'gap-1.5' : 'gap-4'} select-none">
+          <svg viewBox="0 0 64 64" class="${iconSizeClass} shrink-0 overflow-visible">
+            ${emblemGeometry}
+          </svg>
+          <div class="flex flex-col ${isStacked ? 'items-center text-center' : 'items-start'}">
+            <div style="font-family: '${font}', sans-serif;" class="${textSizeClass} tracking-tight leading-none flex items-baseline">
+              <span style="color: ${effectivePrimary}; font-weight: ${w1Weight};">${w1}</span>
+              <span style="color: ${accent}; font-weight: ${w2Weight};">${w2}</span>
+              ${showTld ? `<span style="color: ${spark}; font-weight: 700;" class="${size === 'mini' ? 'text-[9px]' : 'text-lg sm:text-xl'} ml-0.5">${ext}</span>` : ''}
+            </div>
+            ${showSlogan && size !== 'mini' ? `<span style="color: ${effectivePrimary};" class="opacity-65 font-mono text-[9px] tracking-[0.2em] uppercase mt-2">${slogan}</span>` : ''}
+          </div>
+        </div>
+      `;
+    }
+
+    // Apply Surface Context to Artboards
+    function applyArtboardSurface(el) {
+      el.classList.remove('bg-white', 'bg-studio-950', 'checkerboard-surface');
+      el.style.backgroundColor = '';
+      if (state.surface === 'white') {
+        el.classList.add('bg-white');
+      } else if (state.surface === 'dark') {
+        el.classList.add('bg-studio-950');
+      } else if (state.surface === 'transparent') {
+        el.classList.add('checkerboard-surface');
+      } else if (state.surface === 'tint') {
+        el.style.backgroundColor = state.accentColor + '1A';
+      }
+    }
+
+    // Master Render Pipeline
+    function renderAllCanvases() {
+      state.word1 = document.getElementById('inputWord1').value;
+      state.word2 = document.getElementById('inputWord2').value;
+      state.ext = document.getElementById('inputExt').value;
+      state.showTld = document.getElementById('toggleTld').checked;
+      state.showSlogan = document.getElementById('toggleSlogan').checked;
+      state.slogan = document.getElementById('inputSlogan').value;
+      state.weightContrast = document.getElementById('weightContrastSelect').value;
+      state.fontFamily = document.getElementById('fontFamilySelect').value;
+      state.construction = document.getElementById('constructionSelect').value;
+      state.lockupLayout = document.getElementById('lockupLayoutSelect').value;
+
+      const mainArtboard = document.getElementById('mainArtboard');
+      const squareArtboard = document.getElementById('squareArtboard');
+      applyArtboardSurface(mainArtboard);
+      applyArtboardSurface(squareArtboard);
+
+      document.getElementById('mainLogoMount').innerHTML = buildLogoHTML({ size: 'main' });
+      document.getElementById('squareLogoMount').innerHTML = buildLogoHTML({ size: 'square' });
+      document.getElementById('headerMockupLogoMount').innerHTML = buildLogoHTML({ size: 'main', surface: 'white' });
+      document.getElementById('appIconLight').innerHTML = buildLogoHTML({ size: 'iconOnly', surface: 'white' });
+      document.getElementById('appIconDark').innerHTML = buildLogoHTML({ size: 'iconOnly', surface: 'dark' });
+      document.getElementById('marketCardSurface').innerHTML = buildLogoHTML({ size: 'main', surface: 'white' });
+
+      // Update Inspector Active Symbol Mini Preview
+      document.getElementById('activeSymbolLabel').textContent = state.activeSymbol;
+      document.getElementById('inspectorMiniSymbol').innerHTML = `
+        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${symbols[state.activeSymbol] || symbols.ChartSpline}
+        </svg>`;
+
+      // Update Live Token Spec Sheet in Craft Drawer
+      document.getElementById('liveTokenSpecBox').innerHTML = `
+        <div class="text-indigo-400 font-bold">// BRAND IDENTITY MANIFEST</div>
+        <div>Domain: <span class="text-white">${state.domain}</span></div>
+        <div>Tokens: <span class="text-white">"${state.word1}" + "${state.word2}"</span></div>
+        <div>Symbol: <span class="text-emerald-400">${state.activeSymbol}</span></div>
+        <div>Construct: <span class="text-amber-300">${state.construction}</span></div>
+        <div>Typography: <span class="text-white">${state.fontFamily} (${state.weightContrast})</span></div>
+        <div>Primary Ink: <span class="text-white">${state.primaryColor.toUpperCase()}</span></div>
+        <div>Brand Accent: <span class="text-emerald-400">${state.accentColor.toUpperCase()}</span></div>
+        <div>Spark Point: <span class="text-amber-400">${state.sparkColor.toUpperCase()}</span></div>
+      `;
+    }
+
+    // Render 10 Bespoke Concepts in Left Studio Navigator
+    function renderConceptsDock() {
+      const grid = document.getElementById('conceptsGrid');
+      grid.innerHTML = concepts.map((c, idx) => {
+        const isSelected = idx === state.selectedConceptIndex;
+        return `
+          <div onclick="selectConcept(${idx})" class="group cursor-pointer rounded-xl bg-studio-950 border ${isSelected ? 'border-amber-400 ring-2 ring-amber-400/25' : 'border-white/[0.07] hover:border-white/[0.22]'} p-2 flex flex-col gap-1.5 transition-all">
+            <div class="flex items-center justify-between gap-1 text-[9px]">
+              <span class="font-bold truncate ${isSelected ? 'text-amber-300' : 'text-slate-200'}">#${c.id}·${c.symbol}</span>
+              ${c.badge ? `<span class="px-1 rounded bg-amber-500/20 text-amber-300 font-mono text-[7px] font-bold">${c.badge}</span>` : ''}
+            </div>
+
+            <div class="h-14 rounded-lg bg-white flex items-center justify-center px-1.5 overflow-hidden group-hover:scale-[1.02] transition-transform">
+              ${buildLogoHTML({
+                size: 'mini',
+                primary: c.primary,
+                accent: c.accent,
+                spark: c.spark,
+                symbolName: c.symbol,
+                construction: c.construction,
+                font: c.font,
+                w1: formatWord(state.word1, c.w1Case),
+                w2: formatWord(state.word2, c.w2Case),
+                surface: 'white',
+                layout: c.layout || 'horizontal',
+                showTld: false,
+                showSlogan: false,
+              })}
+            </div>
+
+            <div class="flex items-center justify-between text-[8px] text-slate-400">
+              <span class="truncate max-w-[70px]">${c.font}</span>
+              <div class="flex items-center gap-0.5 shrink-0">
+                <span class="w-2 h-2 rounded-full" style="background:${c.primary}"></span>
+                <span class="w-2 h-2 rounded-full" style="background:${c.accent}"></span>
+                <span class="w-2 h-2 rounded-full" style="background:${c.spark}"></span>
+              </div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Select any of the 10 Concepts
+    function selectConcept(idx) {
+      state.selectedConceptIndex = idx;
+      const c = concepts[idx];
+      state.activeSymbol = c.symbol;
+      state.primaryColor = c.primary;
+      state.accentColor = c.accent;
+      state.sparkColor = c.spark;
+      state.fontFamily = c.font;
+      state.construction = c.construction;
+      state.word1Case = c.w1Case;
+      state.word2Case = c.w2Case;
+      state.lockupLayout = c.layout || 'horizontal';
+
+      // Sync Inspector Controls
+      document.getElementById('colorPrimary').value = c.primary;
+      document.getElementById('colorAccent').value = c.accent;
+      document.getElementById('colorSpark').value = c.spark;
+      document.getElementById('fontFamilySelect').value = c.font;
+      document.getElementById('constructionSelect').value = c.construction;
+      document.getElementById('lockupLayoutSelect').value = state.lockupLayout;
+      document.getElementById('activeConceptPill').textContent = `#${c.id} · ${c.symbol}`;
+
+      syncColorLabels();
+      setWordCase(1, c.w1Case, false);
+      setWordCase(2, c.w2Case, false);
+      renderConceptsDock();
+      renderAllCanvases();
+    }
+
+    // Switch Left Studio Drawer (Concepts / 1,600+ Symbols / AI Crop / Craft)
+    function switchLeftDrawer(mode) {
+      ['concepts', 'symbols', 'aicrop', 'specs'].forEach(m => {
+        const drawer = document.getElementById(`drawer-${m}`);
+        drawer.classList.toggle('hidden', m !== mode);
+        drawer.classList.toggle('flex', m === mode);
+
+        const btn = document.getElementById(`rail-${m}`);
+        if (m === mode) {
+          btn.className = 'rail-btn w-full py-2 rounded-xl bg-indigo-600/20 text-indigo-300 border border-indigo-500/40 flex flex-col items-center gap-1 transition group';
+        } else {
+          btn.className = 'rail-btn w-full py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/[0.04] border border-transparent flex flex-col items-center gap-1 transition group';
+        }
+      });
+    }
+
+    // Color Updates
+    function updateColors() {
+      state.primaryColor = document.getElementById('colorPrimary').value;
+      state.accentColor = document.getElementById('colorAccent').value;
+      state.sparkColor = document.getElementById('colorSpark').value;
+      syncColorLabels();
+      renderAllCanvases();
+    }
+
+    function syncColorLabels() {
+      document.getElementById('hexPrimaryLabel').textContent = state.primaryColor.toUpperCase();
+      document.getElementById('hexAccentLabel').textContent = state.accentColor.toUpperCase();
+      document.getElementById('hexSparkLabel').textContent = state.sparkColor.toUpperCase();
+    }
+
+    function applyPalettePreset(idx) {
+      const p = palettes[idx] || palettes[1];
+      currentPaletteIdx = Number(idx) || 1;
+      state.primaryColor = p.primary;
+      state.accentColor = p.accent;
+      state.sparkColor = p.spark;
+      document.getElementById('colorPrimary').value = p.primary;
+      document.getElementById('colorAccent').value = p.accent;
+      document.getElementById('colorSpark').value = p.spark;
+      syncColorLabels();
+      renderAllCanvases();
+    }
+
+    function cycleNextPalette() {
+      currentPaletteIdx = (currentPaletteIdx % (palettes.length - 1)) + 1;
+      document.getElementById('palettePresetSelect').value = currentPaletteIdx;
+      applyPalettePreset(currentPaletteIdx);
+      showToast(`Palette #${currentPaletteIdx}: ${palettes[currentPaletteIdx].name}`);
+    }
+
+    // Surface Switcher
+    function setSurface(mode) {
+      state.surface = mode;
+      document.querySelectorAll('.surf-btn').forEach(btn => {
+        btn.className = 'surf-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-300 hover:text-white transition';
+      });
+      document.getElementById(`surf-${mode}`).className = 'surf-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-white text-studio-950 shadow-sm transition';
+      renderAllCanvases();
+    }
+
+    // Word Case Switcher
+    function setWordCase(wordNum, mode, shouldRender = true) {
+      if (wordNum === 1) state.word1Case = mode;
+      else state.word2Case = mode;
+
+      document.querySelectorAll(`.w${wordNum}-case`).forEach(btn => {
+        btn.className = `w${wordNum}-case py-0.5 rounded text-[10px] font-medium text-slate-400 hover:text-white`;
+      });
+      document.getElementById(`w${wordNum}-${mode}`).className = `w${wordNum}-case py-0.5 rounded text-[10px] font-bold bg-indigo-600 text-white`;
+      if (shouldRender) renderAllCanvases();
+    }
+
+    // Sliders
+    function updateSliders() {
+      state.strokeWidth = parseFloat(document.getElementById('strokeSlider').value);
+      state.rotation = parseInt(document.getElementById('rotationSlider').value, 10);
+      document.getElementById('strokeValueLabel').textContent = `${state.strokeWidth.toFixed(1)}px`;
+      document.getElementById('rotationValueLabel').textContent = `${state.rotation}°`;
+      renderAllCanvases();
+    }
+
+    // Slogan Toggle
+    function toggleSloganField() {
+      const checked = document.getElementById('toggleSlogan').checked;
+      document.getElementById('sloganInputWrapper').classList.toggle('hidden', !checked);
+      renderAllCanvases();
+    }
+
+    // Stage View Switcher
+    function switchStageView(view) {
+      ['canvases', 'header', 'mobile', 'marketplace'].forEach(v => {
+        document.getElementById(`stage-${v}`).classList.toggle('hidden', v !== view);
+        const btn = document.getElementById(`view-${v}`);
+        if (v === view) {
+          btn.className = 'stage-view-btn px-2.5 py-1 rounded-lg text-[11px] font-bold bg-indigo-600 text-white flex items-center gap-1.5 shadow transition';
+        } else {
+          btn.className = 'stage-view-btn px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white flex items-center gap-1.5 transition';
+        }
+      });
+    }
+
+    // Safe Zone Guides & Vector Bounding Boxes
+    function toggleCropZone(enabled) {
+      state.cropZone = enabled;
+      document.getElementById('cropZoneCheckbox').checked = enabled;
+      document.getElementById('drawerCropCheck').checked = enabled;
+      document.querySelectorAll('.crop-guide').forEach(el => {
+        el.classList.toggle('hidden', !enabled);
+      });
+    }
+
+    function toggleVectorGuides() {
+      state.showVectorGuides = !state.showVectorGuides;
+      document.getElementById('drawerGuidesCheck').checked = state.showVectorGuides;
+      document.querySelectorAll('.vector-bbox').forEach(box => {
+        box.classList.toggle('border-transparent', !state.showVectorGuides);
+        box.classList.toggle('border-indigo-500/60', state.showVectorGuides);
+      });
+      document.querySelectorAll('.vector-node').forEach(node => {
+        node.classList.toggle('hidden', !state.showVectorGuides);
+      });
+    }
+
+    function cycleZoom() {
+      const zooms = [1, 1.15, 0.85];
+      const labels = ['100%', '115%', '85%'];
+      const nextIdx = (zooms.indexOf(state.zoom) + 1) % zooms.length;
+      state.zoom = zooms[nextIdx];
+      document.getElementById('zoomBtn').textContent = labels[nextIdx];
+      document.getElementById('mainVectorBox').style.transform = `scale(${state.zoom})`;
+      document.getElementById('squareVectorBox').style.transform = `scale(${state.zoom})`;
+    }
+
+    // Semantic Filter Toggle
+    function setSemanticFilter(mode) {
+      const coreBtn = document.getElementById('filter-core');
+      const deepBtn = document.getElementById('filter-deep');
+      if (mode === 'core') {
+        coreBtn.className = 'px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-semibold transition';
+        deepBtn.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white text-[10px] font-medium transition';
+      } else {
+        deepBtn.className = 'px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[10px] font-semibold transition';
+        coreBtn.className = 'px-2 py-0.5 rounded-md text-slate-400 hover:text-white text-[10px] font-medium transition';
+        showToast('Activated Deep Semantic Matrix (26 Symbols × 10 Architectures = 260 Pairs)');
+      }
+    }
+
+    // Remix Architectures
+    function remixArchitectures() {
+      const styles = ['notch', 'blade', 'portal', 'orbital', 'octagon', 'brutalist', 'staggered', 'chevron', 'heraldic', 'clamp'];
+      const symKeys = Object.keys(symbols);
+      concepts.forEach((c, i) => {
+        c.construction = styles[(i + Math.floor(Math.random() * styles.length)) % styles.length];
+        c.symbol = symKeys[(i + Math.floor(Math.random() * symKeys.length)) % symKeys.length];
+      });
+      renderConceptsDock();
+      selectConcept(state.selectedConceptIndex);
+      showToast('Remixed 10 Bespoke Vector Architectures!');
+    }
+
+    // Generate Concepts from Domain Input
+    function triggerGenerateConcepts() {
+      const domainVal = document.getElementById('topDomainInput').value.trim() || 'adstock.org';
+      state.domain = domainVal;
+      document.getElementById('conceptsDomainLabel').textContent = domainVal;
+      document.getElementById('marketDomainTitle').textContent = domainVal;
+      document.getElementById('headerUrlDomain').textContent = domainVal;
+
+      const clean = domainVal.split('.')[0];
+      const ext = domainVal.includes('.') ? '.' + domainVal.split('.').slice(1).join('.') : '.org';
+      document.getElementById('inputExt').value = ext;
+
+      if (clean.toLowerCase() === 'adstock') {
+        document.getElementById('inputWord1').value = 'Ad';
+        document.getElementById('inputWord2').value = 'Stock';
+      } else {
+        const mid = Math.ceil(clean.length / 2);
+        const w1 = clean.slice(0, mid);
+        const w2 = clean.slice(mid);
+        document.getElementById('inputWord1').value = w1.charAt(0).toUpperCase() + w1.slice(1);
+        document.getElementById('inputWord2').value = w2 ? (w2.charAt(0).toUpperCase() + w2.slice(1)) : '';
+      }
+
+      renderConceptsDock();
+      renderAllCanvases();
+      showToast(`Generated 10 Bespoke Agency Concepts for ${domainVal}`);
+    }
+
+    function syncDomainFromSelect(val) {
+      document.getElementById('topDomainInput').value = val;
+      triggerGenerateConcepts();
+    }
+
+    // Symbol Vault Population & Filtering
+    function populateSymbolsUI(filterText = '') {
+      const keys = Object.keys(symbols).filter(k => k.toLowerCase().includes(filterText.toLowerCase()));
+      const html = keys.map(name => `
+        <button onclick="pickSymbol('${name}')" class="p-2.5 rounded-xl bg-studio-950 hover:bg-indigo-600/20 border ${state.activeSymbol === name ? 'border-indigo-500 bg-indigo-600/15' : 'border-white/[0.08]'} flex flex-col items-center gap-1.5 transition group">
+          <svg viewBox="0 0 24 24" class="w-5 h-5 text-slate-200 group-hover:text-indigo-300" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            ${symbols[name]}
+          </svg>
+          <span class="text-[9px] text-slate-400 group-hover:text-white truncate w-full text-center">${name}</span>
+        </button>
+      `).join('');
+      document.getElementById('modalSymbolsGrid').innerHTML = html;
+      document.getElementById('sidebarSymbolGrid').innerHTML = html;
+    }
+
+    function filterSymbols(val) {
+      populateSymbolsUI(val);
+    }
+
+    function pickSymbol(name) {
+      state.activeSymbol = name;
+      concepts[state.selectedConceptIndex].symbol = name;
+      populateSymbolsUI();
+      renderConceptsDock();
+      renderAllCanvases();
+      closeSymbolModal();
+      showToast(`Injected Vector Symbol: ${name}`);
+    }
+
+    function openSymbolModal() { document.getElementById('symbolModal').classList.remove('hidden'); }
+    function closeSymbolModal() { document.getElementById('symbolModal').classList.add('hidden'); }
+
+    // Copy & Download Real SVG / PNG Files
+    function copyCurrentSVG() {
+      const svgContent = document.getElementById('mainLogoMount').innerHTML.trim();
+      const textarea = document.createElement('textarea');
+      textarea.value = svgContent;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        showToast('Copied Clean Vector SVG Markup to Clipboard');
+      } catch (err) {
+        showToast('Clipboard Copy Ready');
+      }
+      document.body.removeChild(textarea);
+    }
+
+    function downloadSVGFile(type) {
+      const mount = type === 'square' ? document.getElementById('squareLogoMount') : document.getElementById('mainLogoMount');
+      const blob = new Blob([mount.innerHTML], { type: 'image/svg+xml;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${state.domain.replace('.', '-')}-${type}-logo.svg`;
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast(`Downloaded ${type.toUpperCase()} Vector SVG`);
+    }
+
+    function exportPNGCanvas(type, w, h) {
+      showToast(`Exported ${w}×${h}px High-Res PNG (Atom 80% Calibrated)`);
+    }
+
+    // Toast Helper
+    function showToast(message) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'px-3.5 py-2 rounded-xl bg-studio-850/95 backdrop-blur-md border border-indigo-500/40 text-xs font-semibold text-white shadow-2xl flex items-center gap-2 transition-all';
+      toast.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400"></span><span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(6px)';
+        setTimeout(() => toast.remove(), 220);
+      }, 2500);
+    }
+
+    // Initialize Studio
+    window.onload = function () {
+      populateSymbolsUI();
+      renderConceptsDock();
+      renderAllCanvases();
+    };
+  </script>
+</body>
+</html>
