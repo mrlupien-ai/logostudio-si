@@ -73,14 +73,15 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
           <div className="leading-none hidden sm:block">
             <div className="flex items-center gap-1.5">
-              <span className="font-extrabold text-[13px] tracking-tight text-white">ATOMLOGO</span>
-              <span className="text-[11px] font-semibold text-indigo-400">STUDIO</span>
-              <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 font-semibold hidden xl:inline-block">
-                Vector &amp; Identity Craft
+              <span className="font-extrabold text-[14px] tracking-tight text-[#F8FAFC]">
+                LogoStudio<span className="text-[#00E5A3]">.si</span>
+              </span>
+              <span className="text-[9px] font-mono uppercase tracking-widest px-1.5 py-0.5 rounded bg-indigo-500/15 text-[#818CF8] border border-indigo-500/30 font-semibold hidden xl:inline-block">
+                VECTOR &amp; IDENTITY CRAFT
               </span>
             </div>
             <p className="text-[10px] text-slate-400 tracking-tight mt-0.5 hidden 2xl:block">
-              Negative Space Vectors · SVG &amp; Brand Kit Exporter
+              Negative Space Vectors · Typographic Contrast · SVG &amp; Brand Kit Exporter
             </p>
           </div>
         </div>
