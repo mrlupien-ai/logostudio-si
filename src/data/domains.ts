@@ -42,11 +42,14 @@ export const TLDWATCH_223_DOMAINS = [
   "yt.tools","zone.ad"
 ];
 
-export const EXACT_SPLITS: Record<string, [string, string]> = {
+export const EXACT_SPLITS: Record<string, [string, string, string?]> = {
   "4kimages.com": ["4K", "Images"], "adstock.org": ["Ad", "Stock"], "affcar.com": ["Aff", "Car"],
-  "affcart.com": ["Aff", "Cart"], "affpet.com": ["Aff", "Pet"], "allfancyfont.com": ["AllFancy", "Font"],
-  "allfancyfonts.com": ["AllFancy", "Fonts"], "analyzestock.com": ["Analyze", "Stock"],
-  "antarcticshop.com": ["Antarctic", "Shop"], "apetshopz.com": ["APet", "Shopz"],
+  "affcart.com": ["Aff", "Cart"], "affpet.com": ["Aff", "Pet"],
+  "allfancyfont.com": ["All", "Fancy", "Font"],
+  "allfancyfonts.com": ["All", "Fancy", "Fonts"],
+  "analyzestock.com": ["Analyze", "Stock"],
+  "antarcticshop.com": ["Antarctic", "Shop"],
+  "apetshopz.com": ["A", "Pet", "Shopz"],
   "applebids.com": ["Apple", "Bids"], "archiveonline.net": ["Archive", "Online"],
   "articlegenerator.net": ["Article", "Generator"], "asciiart.studio": ["Ascii", "Art"],
   "autolisting.org": ["Auto", "Listing"], "automatic.onl": ["Automatic", ""],
@@ -54,13 +57,16 @@ export const EXACT_SPLITS: Record<string, [string, string]> = {
   "avatardesign.net": ["Avatar", "Design"], "barcode.codes": ["Barcode", ""],
   "barcode.onl": ["Barcode", ""], "barcodeanalyzer.com": ["Barcode", "Analyzer"],
   "bestcareers.net": ["Best", "Careers"], "bid.onl": ["Bid", ""], "bioofy.com": ["Bioofy", ""],
-  "blackbeautychannel.com": ["BlackBeauty", "Channel"], "bloggerposter.com": ["Blogger", "Poster"],
+  "blackbeautychannel.com": ["Black", "Beauty", "Channel"],
+  "bloggerposter.com": ["Blogger", "Poster"],
   "blogposts.net": ["Blog", "Posts"], "booksshops.com": ["Books", "Shops"],
   "booksstore.net": ["Books", "Store"], "breadrecipe.net": ["Bread", "Recipe"],
   "brisketrecipes.com": ["Brisket", "Recipes"], "browse.ad": ["Browse", ""],
   "businessaddress.net": ["Business", "Address"], "businessescards.com": ["Businesses", "Cards"],
   "businessideas.us": ["Business", "Ideas"], "businesslibrary.net": ["Business", "Library"],
-  "busses.us": ["Busses", ""], "buyandsell.onl": ["BuyAnd", "Sell"], "canesshop.com": ["Canes", "Shop"],
+  "busses.us": ["Busses", ""],
+  "buyandsell.onl": ["Buy", "And", "Sell"],
+  "canesshop.com": ["Canes", "Shop"],
   "careermanager.net": ["Career", "Manager"], "carinform.com": ["Car", "Inform"],
   "childeducation.net": ["Child", "Education"], "codes.zone": ["Codes", ""],
   "comparing.us": ["Comparing", ""], "comparisoncars.com": ["Comparison", "Cars"],
@@ -72,7 +78,8 @@ export const EXACT_SPLITS: Record<string, [string, string]> = {
   "courseweb.org": ["Course", "Web"], "currencyexchanger.net": ["Currency", "Exchanger"],
   "cutecaptions.com": ["Cute", "Captions"], "dealspalace.com": ["Deals", "Palace"],
   "dealssaving.com": ["Deals", "Saving"], "domainarchive.net": ["Domain", "Archive"],
-  "domainnameservices.net": ["DomainName", "Services"], "downloadicons.com": ["Download", "Icons"],
+  "domainnameservices.net": ["Domain", "Name", "Services"],
+  "downloadicons.com": ["Download", "Icons"],
   "downloadicons.net": ["Download", "Icons"], "easysend.net": ["Easy", "Send"],
   "eggrecipes.net": ["Egg", "Recipes"], "empiresweb.com": ["Empires", "Web"],
   "endowment.net": ["Endowment", ""], "endowment.us": ["Endowment", ""],
@@ -85,10 +92,14 @@ export const EXACT_SPLITS: Record<string, [string, string]> = {
   "findname.org": ["Find", "Name"], "flayer.net": ["Flayer", ""],
   "fontgenerator.onl": ["Font", "Generator"], "fontgenerator.site": ["Font", "Generator"],
   "forexcurrency.net": ["Forex", "Currency"], "foxs.co": ["Foxs", ""], "foxs.us": ["Foxs", ""],
-  "foxwomen.com": ["Fox", "Women"], "freefontsgenerator.com": ["FreeFonts", "Generator"],
-  "generatorify.com": ["Generatorify", ""], "globalsportsshop.com": ["GlobalSports", "Shop"],
-  "globalsportsstore.com": ["GlobalSports", "Store"], "goldmarkings.com": ["Gold", "Markings"],
-  "homeadvice.net": ["Home", "Advice"], "homewaresshop.com": ["Homewares", "Shop"],
+  "foxwomen.com": ["Fox", "Women"],
+  "freefontsgenerator.com": ["Free", "Fonts", "Generator"],
+  "generatorify.com": ["Generatorify", ""],
+  "globalsportsshop.com": ["Global", "Sports", "Shop"],
+  "globalsportsstore.com": ["Global", "Sports", "Store"],
+  "goldmarkings.com": ["Gold", "Markings"],
+  "homeadvice.net": ["Home", "Advice"],
+  "homewaresshop.com": ["Home", "Wares", "Shop"],
   "hostsshop.com": ["Hosts", "Shop"], "howsblog.com": ["Hows", "Blog"],
   "infoaddress.com": ["Info", "Address"], "irinaana.com": ["Irina", "Ana"],
   "italicfont.com": ["Italic", "Font"], "italicfont.net": ["Italic", "Font"],
@@ -105,14 +116,18 @@ export const EXACT_SPLITS: Record<string, [string, string]> = {
   "maildoozy.com": ["Mail", "Doozy"], "marketing.yt": ["Marketing", ""],
   "marketmail.net": ["Market", "Mail"], "marketplace.ad": ["Market", "Place"],
   "mentifact.ai": ["Mentifact", ""], "mentifact.com": ["Mentifact", ""], "mooc.onl": ["MOOC", ""],
-  "mouseforgaming.com": ["Mouse", "ForGaming"], "movie.yt": ["Movie", ""],
+  "mouseforgaming.com": ["Mouse", "For", "Gaming"],
+  "movie.yt": ["Movie", ""],
   "movieschimp.com": ["Movies", "Chimp"], "musics.one": ["Musics", ""], "musics.onl": ["Musics", ""],
   "musicsong.net": ["Music", "Song"], "nailstamper.com": ["Nail", "Stamper"],
   "newestbusiness.com": ["Newest", "Business"], "nicecaptions.com": ["Nice", "Captions"],
-  "novapetstore.com": ["Nova", "PetStore"], "offers.onl": ["Offers", ""],
+  "novapetstore.com": ["Nova", "Pet", "Store"],
+  "offers.onl": ["Offers", ""],
   "online-exams.com": ["Online", "Exams"], "onlinearchive.net": ["Online", "Archive"],
-  "onlineautomatic.com": ["Online", "Automatic"], "onlinebarcodescan.com": ["Online", "BarcodeScan"],
-  "onlineqrcodegenerator.com": ["Online", "QRCode"], "pastarecipes.net": ["Pasta", "Recipes"],
+  "onlineautomatic.com": ["Online", "Automatic"],
+  "onlinebarcodescan.com": ["Online", "Barcode", "Scan"],
+  "onlineqrcodegenerator.com": ["Online", "QRCode", "Generator"],
+  "pastarecipes.net": ["Pasta", "Recipes"],
   "petsaccess.com": ["Pets", "Access"], "pizzarecipes.net": ["Pizza", "Recipes"],
   "postpress.org": ["Post", "Press"], "potatoesrecipes.com": ["Potatoes", "Recipes"],
   "ppv.ad": ["PPV", ""], "profolio.cv": ["Profolio", ""], "prompts.markets": ["Prompts", ""],
@@ -329,46 +344,56 @@ export function parseDomainOrBrand(rawInput: string) {
 
   let word1 = "";
   let word2 = "";
+  let word3 = "";
 
   if (EXACT_SPLITS[low]) {
     word1 = EXACT_SPLITS[low][0];
     word2 = EXACT_SPLITS[low][1];
+    word3 = EXACT_SPLITS[low][2] || "";
   } else if (namePart.includes('-')) {
     const hy = namePart.split('-').filter(Boolean);
     word1 = capitalize(hy[0]);
-    word2 = hy.slice(1).map(capitalize).join('');
+    word2 = hy[1] ? capitalize(hy[1]) : "";
+    word3 = hy.length > 2 ? hy.slice(2).map(capitalize).join('') : "";
   } else if (namePart.includes('_')) {
     const hy = namePart.split('_').filter(Boolean);
     word1 = capitalize(hy[0]);
-    word2 = hy.slice(1).map(capitalize).join('');
+    word2 = hy[1] ? capitalize(hy[1]) : "";
+    word3 = hy.length > 2 ? hy.slice(2).map(capitalize).join('') : "";
   } else if (namePart.includes(' ')) {
     const words = namePart.split(/\s+/).filter(Boolean);
     word1 = capitalize(words[0]);
-    word2 = words.slice(1).map(capitalize).join(' ');
+    word2 = words[1] ? capitalize(words[1]) : "";
+    word3 = words.length > 2 ? words.slice(2).map(capitalize).join(' ') : "";
   } else if (namePart !== namePart.toUpperCase() && namePart !== namePart.toLowerCase()) {
     const tokens = namePart.match(/[A-Z]+(?=[A-Z][a-z]|\b)|[A-Z]?[a-z]+|[0-9]+[a-zA-Z]*/g);
     if (tokens && tokens.length >= 2) {
       word1 = capitalize(tokens[0]);
-      word2 = tokens.slice(1).map(capitalize).join('');
+      word2 = capitalize(tokens[1]);
+      word3 = tokens.length > 2 ? tokens.slice(2).map(capitalize).join('') : "";
     } else {
-      const [seg1, seg2] = segmentDomainSld(namePart);
+      const [seg1, seg2, seg3] = segmentDomainSld(namePart);
       word1 = seg1 || capitalize(namePart);
       word2 = seg2 || "";
+      word3 = seg3 || "";
     }
   } else {
-    const [seg1, seg2] = segmentDomainSld(namePart);
+    const [seg1, seg2, seg3] = segmentDomainSld(namePart);
     word1 = seg1 || capitalize(namePart);
     word2 = seg2 || "";
+    word3 = seg3 || "";
   }
 
-  const isSingle = !word2;
+  const isSingle = !word2 && !word3;
   const keepExt = isSingle && MEANINGFUL_TLDS.has(extPart.toLowerCase());
-  const match = matchSemanticIconsForDomain(cleaned, word1, word2 || extPart.replace('.', '').toUpperCase());
+  const semanticSecond = [word2, word3].filter(Boolean).join('') || extPart.replace('.', '').toUpperCase();
+  const match = matchSemanticIconsForDomain(cleaned, word1, semanticSecond);
 
   return {
     domain: cleaned,
     word1,
     word2,
+    word3,
     ext: extPart,
     keepExt,
     nicheLabel: match.niche,

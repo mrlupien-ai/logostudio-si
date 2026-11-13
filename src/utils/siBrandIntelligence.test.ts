@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { evaluateDomainBrandability } from './siBrandIntelligence';
 import { getClosestPantone, getWcagContrast, rgbToCmyk } from './color';
 import { segmentDomainSld } from '../data/wordSegmenter';
+import { parseDomainOrBrand } from '../data/domains';
 
 describe('siBrandIntelligence & color science utilities', () => {
   it('evaluateDomainBrandability is deterministic and computes distinct scores for different domains', () => {
@@ -69,8 +70,21 @@ describe('siBrandIntelligence & color science utilities', () => {
     expect(p.deltaE).toBeLessThan(20);
   });
 
-  it('segmentDomainSld segments compound outside-portfolio domains into two words', () => {
-    expect(segmentDomainSld('brightharbor')).toEqual(['Bright', 'Harbor']);
-    expect(segmentDomainSld('cloudpulse')).toEqual(['Cloud', 'Pulse']);
+  it('segmentDomainSld and parseDomainOrBrand segment 2-word and 3-word domains accurately', () => {
+    expect(segmentDomainSld('brightharbor')).toEqual(['Bright', 'Harbor', '']);
+    expect(segmentDomainSld('cloudpulse')).toEqual(['Cloud', 'Pulse', '']);
+    expect(segmentDomainSld('allfancyfont')).toEqual(['All', 'Fancy', 'Font']);
+
+    const pFancy = parseDomainOrBrand('allfancyfont.com');
+    expect([pFancy.word1, pFancy.word2, pFancy.word3]).toEqual(['All', 'Fancy', 'Font']);
+
+    const pPet = parseDomainOrBrand('apetshopz.com');
+    expect([pPet.word1, pPet.word2, pPet.word3]).toEqual(['A', 'Pet', 'Shopz']);
+
+    const pNova = parseDomainOrBrand('novapetstore.com');
+    expect([pNova.word1, pNova.word2, pNova.word3]).toEqual(['Nova', 'Pet', 'Store']);
+
+    const pQr = parseDomainOrBrand('onlineqrcodegenerator.com');
+    expect([pQr.word1, pQr.word2, pQr.word3]).toEqual(['Online', 'QRCode', 'Generator']);
   });
 });

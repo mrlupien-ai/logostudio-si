@@ -61,6 +61,7 @@ export interface LogoState {
   brandName: string;
   word1: string;
   word2: string;
+  word3?: string;
   ext: string;
   keepExt: boolean;
   extStyle: ExtStyle;
@@ -77,6 +78,7 @@ export interface LogoState {
   fontWeight2: string;
   letterCase1: 'as-is' | 'uppercase' | 'lowercase' | 'capitalize';
   letterCase2: 'as-is' | 'uppercase' | 'lowercase' | 'capitalize';
+  letterCase3?: 'as-is' | 'uppercase' | 'lowercase' | 'capitalize';
   tracking: number;
   tracking1Em: number;
   tracking2Em: number;
@@ -135,6 +137,8 @@ export interface LogoVariant {
   domain: string;
   word1: string;
   word2: string;
+  word3?: string;
+  letterCase3?: 'as-is' | 'uppercase' | 'lowercase' | 'capitalize';
   ext: string;
   keepExt: boolean;
   extStyle?: ExtStyle;

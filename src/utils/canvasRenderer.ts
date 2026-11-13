@@ -169,6 +169,17 @@ export function drawLogoOnCanvas(
     ctx.restore();
   }
 
+  // 3b. Draw Word 3 (if present — alternates back to w1Color & w1 weight for 3-word hierarchy)
+  if (layout.w3) {
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+    applyCanvasLetterSpacing(ctx, layout.w3.trackingPx);
+    ctx.font = `${layout.w3.fontWeight} ${layout.w3.fontSize}px "${layout.fontFamily}", sans-serif`;
+    ctx.fillStyle = w1Color;
+    ctx.fillText(layout.w3.text, layout.w3.x, layout.w3.y);
+    ctx.restore();
+  }
+
   // 4. Draw Wordmark Accent (spark-dot or stencil wedge)
   if (layout.wordmarkAccent) {
     const wa = layout.wordmarkAccent;

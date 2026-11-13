@@ -103,6 +103,7 @@ export const PortfolioModal: React.FC<PortfolioModalProps> = ({
             domain: parsed.domain,
             word1: parsed.word1,
             word2: parsed.word2,
+            word3: parsed.word3,
             ext: parsed.ext,
             keepExt: parsed.keepExt,
             extStyle: 'pill',

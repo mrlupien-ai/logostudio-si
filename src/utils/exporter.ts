@@ -247,6 +247,7 @@ export function generateReactLogoComponentCode(state: LogoState): string {
   const cleanInner = emblemInner.trim().replace(/\n\s+/g, '\n        ');
   const w1 = state.word1 || 'Brand';
   const w2 = state.word2 || '';
+  const w3 = state.word3 || '';
   const ext = state.keepExt && state.ext ? state.ext : '';
 
   return `import React from 'react';
@@ -314,7 +315,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
           fontWeight="${state.fontWeight1 || '800'}"
           fill={primary}
         >
-          ${w1}<tspan fill={secondary} fontWeight="${state.fontWeight2 || '700'}">${w2}${ext}</tspan>
+          ${w1}<tspan fill={secondary} fontWeight="${state.fontWeight2 || '700'}">${w2}</tspan>${w3 ? `<tspan fill={primary} fontWeight="${state.fontWeight1 || '800'}">${w3}</tspan>` : ''}<tspan fill={secondary} fontWeight="700">${ext}</tspan>
         </text>
       </svg>
     );
@@ -351,6 +352,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
         >
           ${w2}
         </tspan>
+        ${w3 ? `<tspan fill={primary} fontWeight="${state.fontWeight1 || '800'}" letterSpacing="${(state.tracking1Em ?? -0.02).toFixed(3)}em">${w3}</tspan>` : ''}
         ${ext ? `<tspan fill={accent} fontSize="42" fontWeight="700" dx="10">${ext}</tspan>` : ''}
       </text>
     </svg>

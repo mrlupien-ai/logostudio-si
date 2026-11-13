@@ -70,6 +70,8 @@ const BRAND_ROOT_WORDS: string[] = [
   'lion', 'tiger', 'horse', 'stag', 'swan', 'dove', 'bee', 'ant', 'fin', 'wing',
   'car', 'cars', 'auto', 'drive', 'ride', 'fleet', 'moto', 'gear', 'wheel', 'ev',
   'jet', 'air', 'fly', 'flight', 'wing', 'aero', 'trip', 'tour', 'travel', 'stay',
+  'fancy', 'shopz', 'beauty', 'channel', 'services', 'generator', 'sports', 'gaming',
+  'barcode', 'qrcode', 'wares', 'online', 'analyze', 'antarctic', 'mouse', 'for', 'and',
 ];
 
 const WORD_COST_MAP: Map<string, number> = new Map();
@@ -87,22 +89,22 @@ function cap(s: string): string {
 }
 
 /**
- * Splits a lowercase SLD string into `[word1, word2]` (or `[word1, '']` if single word)
+ * Splits a lowercase SLD string into `[word1, word2, word3?]` (or `[word1, '', '']` if single word)
  * using dynamic programming over `BRAND_ROOT_WORDS`.
  */
-export function segmentDomainSld(rawSld: string): [string, string] {
+export function segmentDomainSld(rawSld: string): [string, string, string?] {
   const s = rawSld.toLowerCase().replace(/[^a-z0-9]/g, '');
   if (!s || s.length < 4) {
-    return [cap(s), ''];
+    return [cap(s), '', ''];
   }
 
   // If the entire string is an exact single root word (e.g., "harbor", "compass"), keep it as 1 word.
   if (WORD_COST_MAP.has(s)) {
-    return [cap(s), ''];
+    return [cap(s), '', ''];
   }
 
   // First check clean 2-word split where both parts are in the dictionary (most common for brandable domains)
-  let bestTwoSplit: [string, string] | null = null;
+  let bestTwoSplit: [string, string, string] | null = null;
   let bestTwoScore = Infinity;
 
   for (let i = 2; i <= s.length - 2; i++) {
@@ -115,7 +117,7 @@ export function segmentDomainSld(rawSld: string): [string, string] {
       const score = leftCost + rightCost;
       if (score < bestTwoScore) {
         bestTwoScore = score;
-        bestTwoSplit = [cap(left), cap(right)];
+        bestTwoSplit = [cap(left), cap(right), ''];
       }
     }
   }
@@ -124,19 +126,46 @@ export function segmentDomainSld(rawSld: string): [string, string] {
     return bestTwoSplit;
   }
 
+  // Check clean 3-word split where all three parts are in the dictionary (e.g., "allfancyfont", "novapetstore")
+  let bestThreeSplit: [string, string, string] | null = null;
+  let bestThreeScore = Infinity;
+
+  for (let i = 2; i <= s.length - 4; i++) {
+    const w1 = s.slice(0, i);
+    const c1 = WORD_COST_MAP.get(w1);
+    if (c1 === undefined) continue;
+    for (let j = i + 2; j <= s.length - 2; j++) {
+      const w2 = s.slice(i, j);
+      const w3 = s.slice(j);
+      const c2 = WORD_COST_MAP.get(w2);
+      const c3 = WORD_COST_MAP.get(w3);
+      if (c2 !== undefined && c3 !== undefined) {
+        const score = c1 + c2 + c3;
+        if (score < bestThreeScore) {
+          bestThreeScore = score;
+          bestThreeSplit = [cap(w1), cap(w2), cap(w3)];
+        }
+      }
+    }
+  }
+
+  if (bestThreeSplit) {
+    return bestThreeSplit;
+  }
+
   // Next check if either prefix or suffix (>= 4 chars) is a known root word and the remainder is >= 3 chars
   for (let i = s.length - 3; i >= 3; i--) {
     const left = s.slice(0, i);
     const right = s.slice(i);
     if (left.length >= 4 && WORD_COST_MAP.has(left) && right.length >= 3) {
-      return [cap(left), cap(right)];
+      return [cap(left), cap(right), ''];
     }
     if (right.length >= 4 && WORD_COST_MAP.has(right) && left.length >= 3) {
-      return [cap(left), cap(right)];
+      return [cap(left), cap(right), ''];
     }
   }
 
-  // General DP for 3+ words (collapse tokens after the first into Word 2 in PascalCase)
+  // General DP for 3+ words
   const n = s.length;
   const dp: number[] = new Array(n + 1).fill(Infinity);
   const back: number[] = new Array(n + 1).fill(-1);
@@ -166,9 +195,13 @@ export function segmentDomainSld(rawSld: string): [string, string] {
     curr = back[curr];
   }
 
-  if (tokens.length >= 2) {
-    return [cap(tokens[0]), tokens.slice(1).map(cap).join('')];
+  if (tokens.length >= 3) {
+    return [cap(tokens[0]), cap(tokens[1]), tokens.slice(2).map(cap).join('')];
   }
 
-  return [cap(s), ''];
+  if (tokens.length === 2) {
+    return [cap(tokens[0]), cap(tokens[1]), ''];
+  }
+
+  return [cap(s), '', ''];
 }

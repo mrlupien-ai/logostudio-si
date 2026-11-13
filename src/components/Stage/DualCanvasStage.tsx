@@ -268,7 +268,8 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
   const weights = getTypographicWeights(state.typoContrast);
   const w1Formatted = formatWordText(state.word1, state.letterCase1, weights.isUpper);
   const w2Formatted = formatWordText(state.word2, state.letterCase2, weights.isUpper);
-  const fullBrandDisplay = `${w1Formatted}${w2Formatted}`;
+  const w3Formatted = formatWordText(state.word3 || '', state.letterCase3 || 'as-is', weights.isUpper);
+  const fullBrandDisplay = `${w1Formatted}${w2Formatted}${w3Formatted}`;
 
   // Render canvases whenever state or fonts update
   React.useEffect(() => {
@@ -452,6 +453,17 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
                 }}
               >
                 {w2Formatted}
+              </span>
+            )}
+            {w3Formatted && (
+              <span
+                style={{
+                  fontWeight: weights.w1 as unknown as number,
+                  color: word1Color,
+                  letterSpacing: `${state.tracking1Em ?? -0.02}em`,
+                }}
+              >
+                {w3Formatted}
               </span>
             )}
             {state.keepExt && state.ext && (

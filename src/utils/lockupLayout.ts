@@ -100,6 +100,7 @@ export interface LockupLayoutResult {
   emblem: EmblemLayout;
   w1: WordLayout;
   w2: WordLayout | null;
+  w3: WordLayout | null;
   dotBadge: DotBadgeLayout | null;
   extPill: ExtensionPillLayout | null;
   wordmarkAccent: WordmarkAccentLayout | null;
@@ -191,9 +192,11 @@ export function computeLockupLayout(
 
   const rawW1 = cfg.word1 || '';
   const rawW2 = cfg.word2 || '';
+  const rawW3 = cfg.word3 || '';
   const w1Text = formatWordText(rawW1, (cfg as LogoState).letterCase1 || 'as-is', weights.isUpper);
   const w2Text = formatWordText(rawW2, (cfg as LogoState).letterCase2 || 'as-is', weights.isUpper);
-  const isSingle = !w2Text;
+  const w3Text = formatWordText(rawW3, cfg.letterCase3 || 'as-is', weights.isUpper);
+  const isSingle = !w2Text && !w3Text;
 
   const extStyle: ExtStyle = (cfg as LogoState).extStyle || 'pill';
   const wordmarkAccentMode: WordmarkAccentMode = (cfg as LogoState).wordmarkAccent || 'none';
@@ -214,7 +217,8 @@ export function computeLockupLayout(
   let useHorizontal = !isSquare && cfg.mainLayout !== 'stacked';
   // Defect 7 fix: on compact concept thumbnails (W <= 420), if a long wordmark exceeds 13 chars in horizontal mode,
   // switch the thumbnail to stacked mode so the wordmark remains crisp and legible.
-  const combinedCharCount = w1Text.length + w2Text.length + (cfg.keepExt && cfg.ext ? cfg.ext.length : 0);
+  const combinedCharCount =
+    w1Text.length + w2Text.length + w3Text.length + (cfg.keepExt && cfg.ext ? cfg.ext.length : 0);
   if (W <= 420 && useHorizontal && combinedCharCount >= 14) {
     useHorizontal = false;
   }
@@ -268,7 +272,7 @@ export function computeLockupLayout(
     let w2Ascent = fontSize * 0.72;
     let w2Descent = fontSize * 0.18;
 
-    if (!isSingle) {
+    if (w2Text) {
       const m2 = measureTrackedWordWidth(
         ctx,
         w2Text,
@@ -281,6 +285,25 @@ export function computeLockupLayout(
       w2Width = m2.width;
       w2Ascent = m2.ascent;
       w2Descent = m2.descent;
+    }
+
+    let w3Width = 0;
+    let w3Ascent = fontSize * 0.72;
+    let w3Descent = fontSize * 0.18;
+
+    if (w3Text) {
+      const m3 = measureTrackedWordWidth(
+        ctx,
+        w3Text,
+        weights.w1,
+        fontSize,
+        fontFam,
+        t1Px,
+        weights.isUpper
+      );
+      w3Width = m3.width;
+      w3Ascent = m3.ascent;
+      w3Descent = m3.descent;
     }
 
     // Small junction spacing when spark-dot is active between w1 and w2
@@ -363,6 +386,7 @@ export function computeLockupLayout(
       w1Width +
       wordJunctionGap +
       w2Width +
+      w3Width +
       dotBadgeW +
       (hasExt ? pillOffset + pillW : 0);
 
@@ -393,8 +417,8 @@ export function computeLockupLayout(
       }
     }
 
-    const ascent = Math.max(w1Ascent, w2Ascent);
-    const descent = Math.max(w1Descent, w2Descent);
+    const ascent = Math.max(w1Ascent, w2Ascent, w3Ascent);
+    const descent = Math.max(w1Descent, w2Descent, w3Descent);
 
     let rawBboxW = 0;
     let rawBboxH = 0;
@@ -418,6 +442,9 @@ export function computeLockupLayout(
       w2Width,
       w2Ascent,
       w2Descent,
+      w3Width,
+      w3Ascent,
+      w3Descent,
       wordJunctionGap,
       ascent,
       descent,
@@ -564,7 +591,7 @@ export function computeLockupLayout(
   // Word 2 layout
   let curX = wordmarkStartX + m.w1Width + m.wordJunctionGap;
   let w2: WordLayout | null = null;
-  if (!isSingle) {
+  if (w2Text) {
     w2 = {
       text: w2Text,
       x: curX,
@@ -576,6 +603,22 @@ export function computeLockupLayout(
       trackingPx: m.t2Px,
     };
     curX += m.w2Width;
+  }
+
+  // Word 3 layout (alternates back to w1 weight and primary ink color for clear 3-word hierarchy)
+  let w3: WordLayout | null = null;
+  if (w3Text) {
+    w3 = {
+      text: w3Text,
+      x: curX,
+      y: baselineY,
+      fontSize: baseFontSize,
+      fontWeight: weights.w1,
+      color: cfg.primary,
+      width: m.w3Width,
+      trackingPx: m.t1Px,
+    };
+    curX += m.w3Width;
   }
 
   // Wordmark Accent layout ('spark-dot' or 'stencil-slice-45')
@@ -823,6 +866,7 @@ export function computeLockupLayout(
     },
     w1,
     w2,
+    w3,
     dotBadge,
     extPill,
     wordmarkAccent,

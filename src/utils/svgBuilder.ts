@@ -594,6 +594,14 @@ export function generateFullLogoSvg(
   `
     : '';
 
+  const w3Markup = layout.w3
+    ? `
+    <text x="${layout.w3.x}" y="${layout.w3.y}" font-family="'${layout.fontFamily}', sans-serif" font-size="${layout.w3.fontSize}" font-weight="${layout.w3.fontWeight}" fill="${primaryColor}" letter-spacing="${layout.w3.trackingPx.toFixed(2)}px">
+      ${layout.w3.text}
+    </text>
+  `
+    : '';
+
   const dotBadgeMarkup = layout.dotBadge
     ? `
     <circle cx="${layout.dotBadge.cx}" cy="${layout.dotBadge.cy}" r="${layout.dotBadge.radius}" fill="${layout.dotBadge.color}" />
@@ -676,6 +684,7 @@ export function generateFullLogoSvg(
   <g id="logostudio-wordmark">
     ${w1Markup}
     ${w2Markup}
+    ${w3Markup}
     ${wordmarkAccentMarkup}
     ${dotBadgeMarkup}
     ${extMarkup}
@@ -698,6 +707,7 @@ export async function generateFullLogoSvgEmbedded(
   const sampleText = [
     layout.w1.text,
     layout.w2?.text || '',
+    layout.w3?.text || '',
     layout.extPill?.text || '',
     layout.tagline?.text || '',
     (state.word1 ? state.word1[0] : 'A').toUpperCase(),

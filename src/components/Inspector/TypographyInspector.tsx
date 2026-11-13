@@ -80,9 +80,9 @@ export const TypographyInspector: React.FC<TypographyInspectorProps> = ({ state,
         </label>
       </div>
 
-      {/* Word 1 + Word 2 + Extension */}
+      {/* Word 1 + Word 2 + Word 3 + Extension */}
       <div className="grid grid-cols-12 gap-1.5">
-        <div className="col-span-5">
+        <div className="col-span-3">
           <label className="block text-[10px] text-slate-500 mb-1">Word 1</label>
           <input
             type="text"
@@ -91,14 +91,24 @@ export const TypographyInspector: React.FC<TypographyInspectorProps> = ({ state,
             className="w-full bg-[#07090E] border border-white/[0.08] rounded-md px-2 py-1 text-xs font-semibold text-white focus:outline-none focus:border-indigo-500"
           />
         </div>
-        <div className="col-span-5">
-          <label className="block text-[10px] text-slate-500 mb-1">Word 2 (Optional)</label>
+        <div className="col-span-4">
+          <label className="block text-[10px] text-slate-500 mb-1">Word 2 (Opt)</label>
           <input
             type="text"
             value={state.word2}
             onChange={(e) => onChange({ word2: e.target.value })}
-            placeholder="(Single word)"
+            placeholder="(Single)"
             className="w-full bg-[#07090E] border border-white/[0.08] rounded-md px-2 py-1 text-xs font-semibold text-emerald-400 focus:outline-none focus:border-indigo-500"
+          />
+        </div>
+        <div className="col-span-3">
+          <label className="block text-[10px] text-slate-500 mb-1">Word 3 (Opt)</label>
+          <input
+            type="text"
+            value={state.word3 || ''}
+            onChange={(e) => onChange({ word3: e.target.value })}
+            placeholder="(None)"
+            className="w-full bg-[#07090E] border border-white/[0.08] rounded-md px-2 py-1 text-xs font-semibold text-indigo-300 focus:outline-none focus:border-indigo-500"
           />
         </div>
         <div className="col-span-2">
@@ -326,6 +336,28 @@ export const TypographyInspector: React.FC<TypographyInspectorProps> = ({ state,
           </div>
         </div>
       </div>
+
+      {state.word3 && state.word3.trim() !== '' && (
+        <div>
+          <label className="block text-[10px] text-slate-500 mb-1">Word 3 Letter Case</label>
+          <div className="grid grid-cols-4 gap-1 bg-[#07090E] p-0.5 rounded-md border border-white/[0.06]">
+            {(['as-is', 'uppercase', 'capitalize', 'lowercase'] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                onClick={() => onChange({ letterCase3: mode })}
+                className={`py-1 rounded text-[10px] font-medium transition cursor-pointer ${
+                  (state.letterCase3 || 'as-is') === mode
+                    ? 'bg-indigo-600 text-white'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                {mode === 'as-is' ? 'Auto' : mode === 'uppercase' ? 'Upp' : mode === 'capitalize' ? 'Cap' : 'Low'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

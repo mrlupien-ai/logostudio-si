@@ -117,9 +117,10 @@ export default function App() {
     const init = parseDomainOrBrand('adstock.org');
     return {
       domain: init.domain,
-      brandName: `${init.word1}${init.word2 ? ' ' + init.word2 : ''}`,
+      brandName: [init.word1, init.word2, init.word3].filter(Boolean).join(' '),
       word1: init.word1,
       word2: init.word2,
+      word3: init.word3 || '',
       ext: init.ext,
       keepExt: init.keepExt,
       extStyle: 'pill',
@@ -134,6 +135,7 @@ export default function App() {
       fontWeight2: '700',
       letterCase1: 'as-is',
       letterCase2: 'as-is',
+      letterCase3: 'as-is',
       tracking: -1.5,
       tracking1Em: -0.02,
       tracking2Em: -0.01,
@@ -189,7 +191,7 @@ export default function App() {
       const pool = getExtendedSemanticIconsForDomain(
         currentState.domain,
         currentState.word1,
-        currentState.word2,
+        [currentState.word2, currentState.word3].filter(Boolean).join(''),
         currentState.nicheLabel,
         currentState.icons10,
         currentState.iconGroups
@@ -231,6 +233,8 @@ export default function App() {
           domain: currentState.domain,
           word1: currentState.word1,
           word2: currentState.word2,
+          word3: currentState.word3,
+          letterCase3: currentState.letterCase3,
           ext: currentState.ext,
           keepExt: currentState.keepExt,
           extStyle: currentState.extStyle,
@@ -280,9 +284,10 @@ export default function App() {
       const next: LogoState = {
         ...prev,
         domain: parsed.domain,
-        brandName: `${parsed.word1}${parsed.word2 ? ' ' + parsed.word2 : ''}`,
+        brandName: [parsed.word1, parsed.word2, parsed.word3].filter(Boolean).join(' '),
         word1: parsed.word1,
         word2: parsed.word2,
+        word3: parsed.word3 || '',
         ext: parsed.ext,
         keepExt: parsed.keepExt,
         nicheLabel: parsed.nicheLabel,
@@ -306,15 +311,19 @@ export default function App() {
     setVariantSeedOffset(0);
   };
 
-  // Toggle 1-Word vs 2-Word mode
+  // Toggle 1-Word vs Multi-Word mode
   const handleToggleWordMode = () => {
     setState((prev) => {
-      if (prev.word2 && prev.word2.trim() !== '') {
-        const merged = prev.word1 + prev.word2.toLowerCase();
+      if ((prev.word2 && prev.word2.trim() !== '') || (prev.word3 && prev.word3.trim() !== '')) {
+        const merged =
+          prev.word1 +
+          (prev.word2 ? prev.word2.toLowerCase() : '') +
+          (prev.word3 ? prev.word3.toLowerCase() : '');
         const next: LogoState = {
           ...prev,
           word1: merged,
           word2: '',
+          word3: '',
         };
         next.variants10 = generate10Variants(next, variantSeedOffset);
         return next;
@@ -327,6 +336,7 @@ export default function App() {
           ...prev,
           word1: w1.charAt(0).toUpperCase() + w1.slice(1),
           word2: w2.charAt(0).toUpperCase() + w2.slice(1),
+          word3: '',
         };
         next.variants10 = generate10Variants(next, variantSeedOffset);
         return next;
@@ -838,7 +848,9 @@ export default function App() {
         isExporting={false}
         isExporting10={false}
         nicheLabel={state.nicheLabel}
-        wordCount={state.word2 && state.word2.trim() ? 2 : 1}
+        wordCount={
+          [state.word1, state.word2, state.word3].filter((w) => w && w.trim() !== '').length || 1
+        }
         remixMode={remixMode}
         onChangeRemixMode={handleChangeRemixMode}
         semanticPoolCount={semanticPool.allSemantic.length}
