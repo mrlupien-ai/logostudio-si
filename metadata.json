@@ -1,0 +1,8 @@
+{
+  "name": "AtomLogo Studio — Advanced Web Logo Suite & Vector Studio",
+  "description": "Studio profesional pentru generare și editare avansată de logo-uri web, wordmark-uri geometrice, simboluri vectoriale și export complet SVG, PNG și Brand Kit.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
