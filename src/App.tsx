@@ -523,8 +523,8 @@ export default function App() {
             </div>
           </div>
 
-          {/* 268px Navigator Drawer */}
-          <div className="w-[268px] bg-[#0B0E17]/90 border-r border-white/[0.07] flex flex-col h-full overflow-hidden">
+          {/* 276px Navigator Drawer (2-Column Grid for 10 Concepts) */}
+          <div className="w-[276px] bg-[#0B0E17]/90 border-r border-white/[0.07] flex flex-col h-full overflow-hidden">
             {/* DRAWER VIEW 1: 10 BESPOKE AGENCY CONCEPTS */}
             {leftDockTab === 'concepts' && (
               <Variants10Board
@@ -533,6 +533,7 @@ export default function App() {
                 remixMode={remixMode}
                 onChangeRemixMode={handleChangeRemixMode}
                 onRemixVariants={handleRemixVariants}
+                onOpenVault={() => setIsVaultOpen(true)}
               />
             )}
 
