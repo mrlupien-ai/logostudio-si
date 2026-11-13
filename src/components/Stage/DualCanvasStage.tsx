@@ -407,9 +407,6 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
                           <div className="vector-node -top-1 -right-1" />
                           <div className="vector-node -bottom-1 -left-1" />
                           <div className="vector-node -bottom-1 -right-1" />
-                          <div className="absolute -top-5 left-1/2 -translate-x-1/2 px-1.5 py-0.2 rounded bg-indigo-600 text-[8px] font-mono text-white whitespace-nowrap shadow z-20">
-                            Lockup · {state.fontFamily} · {state.construction?.label || state.containerStyle}
-                          </div>
                         </>
                       )}
                       <canvas

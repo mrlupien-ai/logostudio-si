@@ -124,7 +124,7 @@ export const Header: React.FC<HeaderProps> = ({
       </div>
 
       {/* Center: Omnibox Command Bar */}
-      <div className="flex items-center gap-1.5 bg-[#06080D] border border-white/[0.09] focus-within:border-indigo-500/70 rounded-xl p-1 pl-2.5 shadow-inner flex-1 max-w-[500px] min-w-[220px]">
+      <div className="flex items-center gap-1.5 bg-[#06080D] border border-white/[0.09] focus-within:border-indigo-500/70 rounded-xl p-1 pl-2.5 shadow-inner flex-1 max-w-[460px] min-w-0">
         <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
         <input
           type="text"
@@ -134,7 +134,7 @@ export const Header: React.FC<HeaderProps> = ({
             if (e.key === 'Enter') onGenerate();
           }}
           placeholder="Enter domain or brand (e.g. adstock.org)..."
-          className="bg-transparent text-xs font-mono font-semibold text-white placeholder-slate-500 focus:outline-none flex-1 min-w-[90px]"
+          className="bg-transparent text-xs font-mono font-semibold text-white placeholder-slate-500 focus:outline-none flex-1 min-w-[60px]"
         />
         <button
           type="button"
