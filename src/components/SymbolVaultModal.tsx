@@ -180,7 +180,7 @@ export const SymbolVaultModal: React.FC<SymbolVaultModalProps> = ({
         </div>
 
         {/* Icon Grid */}
-        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 overflow-y-auto p-1 flex-1 min-h-[300px]">
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 overflow-y-auto p-1 flex-1 min-h-[300px] content-start">
           {filteredIcons.slice(0, visibleLimit).map((iconKey) => {
             const IconComp = resolveLucideIcon(iconKey);
             const isSelected = iconKey.toLowerCase() === activeIcon.toLowerCase();
@@ -196,7 +196,7 @@ export const SymbolVaultModal: React.FC<SymbolVaultModalProps> = ({
                   onClose();
                 }}
                 title={iconKey}
-                className={`relative p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 border transition cursor-pointer group ${
+                className={`relative h-20 p-2 rounded-xl flex flex-col items-center justify-center gap-1.5 border transition cursor-pointer group ${
                   isSelected
                     ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-2 ring-indigo-400/50'
                     : isCore

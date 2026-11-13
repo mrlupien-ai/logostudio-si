@@ -43,7 +43,7 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
   const handleExportZip = async () => {
     try {
       setIsExportingZip(true);
-      await downloadAll10VariantsZip(state, (msg) => setExportStatus(msg));
+      await downloadAll10VariantsZip(state, (msg: string) => setExportStatus(msg));
     } catch (err) {
       console.error(err);
     } finally {
@@ -63,6 +63,8 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
           containerStyle: variant.containerStyle,
           construction: variant.construction,
           activeIcon: variant.activeIcon,
+          secondaryIcon: variant.secondaryIcon || state.secondaryIcon,
+          emblemFusion: variant.emblemFusion || state.emblemFusion,
           customSvgPath: variant.customSvgPath || state.customSvgPath,
           primary: variant.primary,
           secondary: variant.secondary,
@@ -73,15 +75,36 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
         160
       );
 
+      const mergedVariant = {
+        ...variant,
+        extStyle: variant.extStyle || state.extStyle,
+        tracking1Em: variant.tracking1Em ?? state.tracking1Em,
+        tracking2Em: variant.tracking2Em ?? state.tracking2Em,
+        wordmarkAccent: variant.wordmarkAccent || state.wordmarkAccent,
+      };
+
       loadSvgToImage(emblemSvg)
         .then((img) => {
-          drawLogoOnCanvas(canvas, img, variant, 320, 192, false, false);
+          drawLogoOnCanvas(canvas, img, mergedVariant, 320, 192, false, false);
         })
         .catch((err) => {
           console.error('Failed to render variant thumbnail:', err);
         });
     });
-  }, [state.variants10, state.word1, state.word2, state.ext, state.keepExt, state.customSvgPath]);
+  }, [
+    state.variants10,
+    state.word1,
+    state.word2,
+    state.ext,
+    state.keepExt,
+    state.extStyle,
+    state.tracking1Em,
+    state.tracking2Em,
+    state.wordmarkAccent,
+    state.emblemFusion,
+    state.secondaryIcon,
+    state.customSvgPath,
+  ]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -96,7 +119,8 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
               </span>
             </div>
             <p className="text-[10px] text-slate-400 mt-0.5">
-              for <strong className="text-indigo-400 font-mono">{state.domain}</strong> · {semanticPool.allSemantic.length * 10} Pairs
+              for <strong className="text-indigo-400 font-mono">{state.domain}</strong> ·{' '}
+              {semanticPool.allSemantic.length * 10} Pairs
             </p>
           </div>
 
@@ -153,7 +177,9 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
             <div
               key={`${v.id}-${idx}`}
               onClick={() => onSelectVariant(idx)}
-              title={`#${v.id} · ${v.activeIcon} · ${v.construction ? v.construction.label : v.containerStyle}`}
+              title={`#${v.id} · ${v.activeIcon} · ${
+                v.construction ? v.construction.label : v.containerStyle
+              }`}
               className={`rounded-xl p-1.5 border transition cursor-pointer flex flex-col justify-between group ${
                 isActive
                   ? 'bg-indigo-950/60 border-amber-400/90 shadow-lg shadow-amber-500/10 ring-1 ring-amber-400/50'
@@ -195,7 +221,10 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
                 </span>
                 <div className="flex items-center gap-0.5 shrink-0">
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: v.primary }} />
-                  <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: v.secondary }} />
+                  <span
+                    className="w-1.5 h-1.5 rounded-full"
+                    style={{ backgroundColor: v.secondary }}
+                  />
                   <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: v.accent }} />
                 </div>
               </div>
@@ -226,7 +255,7 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
             title="Export all 10 concepts as SVGs and PNGs in a .ZIP file"
           >
             <Archive className="w-3 h-3" />
-            <span>{isExportingZip ? (exportStatus || 'Exporting...') : 'Export 10 (.ZIP)'}</span>
+            <span>{isExportingZip ? exportStatus || 'Exporting...' : 'Export 10 (.ZIP)'}</span>
           </button>
         </div>
         {onOpenVault && (

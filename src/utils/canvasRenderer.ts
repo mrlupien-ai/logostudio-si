@@ -47,20 +47,25 @@ export function drawLogoOnCanvas(
   canvas.height = Math.round(H * ratio);
   ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-  // Maximum subpixel sharpness & antialiasing
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = 'high';
 
-  // Background
   const bgMode = (cfg as LogoState).bgMode || 'white';
+  let w1Color = cfg.primary;
+  let w2Color = cfg.secondary;
+
   if (bgMode === 'dark') {
     ctx.fillStyle = '#07090E';
     ctx.fillRect(0, 0, W, H);
+    w1Color = '#F8FAFC';
+    w2Color = cfg.accent || '#38BDF8';
   } else if (bgMode === 'transparent') {
     ctx.clearRect(0, 0, W, H);
   } else if (bgMode === 'brand') {
     ctx.fillStyle = cfg.primary;
     ctx.fillRect(0, 0, W, H);
+    w1Color = '#FFFFFF';
+    w2Color = cfg.accent || '#FACC15';
   } else {
     ctx.fillStyle = '#FFFFFF';
     ctx.fillRect(0, 0, W, H);
@@ -68,7 +73,6 @@ export function drawLogoOnCanvas(
 
   const cropZone = getCropZone(W, H);
 
-  // Raster mode branch
   if ((cfg as LogoState).rasterMode && (cfg as LogoState).rasterDataUrl) {
     const rImg = new Image();
     rImg.onload = () => {
@@ -110,27 +114,91 @@ export function drawLogoOnCanvas(
     );
   }
 
-  // 2. Draw Word 1
-  ctx.save();
-  ctx.textBaseline = 'alphabetic';
-  applyCanvasLetterSpacing(ctx, layout.tracking);
-  ctx.font = `${layout.w1.fontWeight} ${layout.w1.fontSize}px "${layout.fontFamily}", sans-serif`;
-  ctx.fillStyle = layout.w1.color;
-  ctx.fillText(layout.w1.text, layout.w1.x, layout.w1.y);
-  ctx.restore();
+  // 2. Draw Word 1 (with optional 45° stencil cut via offscreen destination-out layer)
+  if (
+    layout.wordmarkAccent?.mode === 'stencil-slice-45' &&
+    layout.wordmarkAccent.slicePolygon &&
+    typeof document !== 'undefined'
+  ) {
+    const off = document.createElement('canvas');
+    off.width = Math.round(W * ratio);
+    off.height = Math.round(H * ratio);
+    const octx = off.getContext('2d');
+    if (octx) {
+      octx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      octx.textBaseline = 'alphabetic';
+      applyCanvasLetterSpacing(octx, layout.w1.trackingPx);
+      octx.font = `${layout.w1.fontWeight} ${layout.w1.fontSize}px "${layout.fontFamily}", sans-serif`;
+      octx.fillStyle = w1Color;
+      octx.fillText(layout.w1.text, layout.w1.x, layout.w1.y);
+
+      // Punch out the 45° diagonal cut polygon
+      octx.globalCompositeOperation = 'destination-out';
+      const poly = layout.wordmarkAccent.slicePolygon;
+      octx.beginPath();
+      octx.moveTo(poly[0].x, poly[0].y);
+      for (let i = 1; i < poly.length; i++) {
+        octx.lineTo(poly[i].x, poly[i].y);
+      }
+      octx.closePath();
+      octx.fill();
+
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.drawImage(off, 0, 0);
+      ctx.restore();
+    }
+  } else {
+    ctx.save();
+    ctx.textBaseline = 'alphabetic';
+    applyCanvasLetterSpacing(ctx, layout.w1.trackingPx);
+    ctx.font = `${layout.w1.fontWeight} ${layout.w1.fontSize}px "${layout.fontFamily}", sans-serif`;
+    ctx.fillStyle = w1Color;
+    ctx.fillText(layout.w1.text, layout.w1.x, layout.w1.y);
+    ctx.restore();
+  }
 
   // 3. Draw Word 2 (if present)
   if (layout.w2) {
     ctx.save();
     ctx.textBaseline = 'alphabetic';
-    applyCanvasLetterSpacing(ctx, layout.tracking);
+    applyCanvasLetterSpacing(ctx, layout.w2.trackingPx);
     ctx.font = `${layout.w2.fontWeight} ${layout.w2.fontSize}px "${layout.fontFamily}", sans-serif`;
-    ctx.fillStyle = layout.w2.color;
+    ctx.fillStyle = w2Color;
     ctx.fillText(layout.w2.text, layout.w2.x, layout.w2.y);
     ctx.restore();
   }
 
-  // 4. Draw Dot Badge (if active)
+  // 4. Draw Wordmark Accent (spark-dot or stencil wedge)
+  if (layout.wordmarkAccent) {
+    const wa = layout.wordmarkAccent;
+    if (
+      wa.mode === 'spark-dot' &&
+      wa.sparkCx !== undefined &&
+      wa.sparkCy !== undefined &&
+      wa.sparkRadius !== undefined
+    ) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(wa.sparkCx, wa.sparkCy, wa.sparkRadius, 0, Math.PI * 2);
+      ctx.fillStyle = wa.color;
+      ctx.fill();
+      ctx.restore();
+    } else if (wa.mode === 'stencil-slice-45' && wa.wedgePolygon && wa.wedgePolygon.length >= 3) {
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(wa.wedgePolygon[0].x, wa.wedgePolygon[0].y);
+      for (let i = 1; i < wa.wedgePolygon.length; i++) {
+        ctx.lineTo(wa.wedgePolygon[i].x, wa.wedgePolygon[i].y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = wa.color;
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // 5. Draw Dot Badge (if active)
   if (layout.dotBadge) {
     ctx.save();
     ctx.beginPath();
@@ -140,29 +208,65 @@ export function drawLogoOnCanvas(
     ctx.restore();
   }
 
-  // 5. Draw Extension Pill (if active)
+  // 6. Draw Extension Block across all 5 extStyle modes
   if (layout.extPill) {
+    const ep = layout.extPill;
     ctx.save();
-    ctx.fillStyle = layout.extPill.color;
-    ctx.beginPath();
-    ctx.roundRect(
-      layout.extPill.x,
-      layout.extPill.y,
-      layout.extPill.width,
-      layout.extPill.height,
-      layout.extPill.radius
-    );
-    ctx.fill();
+    if (ep.style === 'inline' || ep.style === 'superscript') {
+      ctx.textBaseline = 'alphabetic';
+      applyCanvasLetterSpacing(ctx, ep.style === 'superscript' ? 0.5 : 0);
+      ctx.font = `${ep.fontWeight} ${ep.fontSize}px "${ep.fontFamily}", sans-serif`;
+      ctx.fillStyle = ep.textColor;
+      ctx.fillText(ep.text, ep.textX, ep.textY);
+    } else if (ep.style === 'dot') {
+      if (ep.dotCx !== undefined && ep.dotCy !== undefined && ep.dotRadius !== undefined) {
+        ctx.beginPath();
+        ctx.arc(ep.dotCx, ep.dotCy, ep.dotRadius, 0, Math.PI * 2);
+        ctx.fillStyle = ep.dotColor || cfg.accent;
+        ctx.fill();
+      }
+      ctx.textBaseline = 'alphabetic';
+      applyCanvasLetterSpacing(ctx, 0);
+      ctx.font = `${ep.fontWeight} ${ep.fontSize}px "${ep.fontFamily}", sans-serif`;
+      ctx.fillStyle = ep.textColor;
+      ctx.fillText(ep.text, ep.textX, ep.textY);
+    } else if (ep.style === 'tech-tag') {
+      ctx.save();
+      ctx.globalAlpha = ep.fillOpacity ?? 0.12;
+      ctx.fillStyle = ep.color;
+      ctx.beginPath();
+      ctx.roundRect(ep.x, ep.y, ep.width, ep.height, ep.radius);
+      ctx.fill();
+      ctx.restore();
 
-    ctx.textBaseline = 'alphabetic';
-    applyCanvasLetterSpacing(ctx, 0);
-    ctx.font = `700 ${layout.extPill.fontSize}px "${layout.fontFamily}", sans-serif`;
-    ctx.fillStyle = layout.extPill.textColor;
-    ctx.fillText(layout.extPill.text, layout.extPill.textX, layout.extPill.textY);
+      ctx.strokeStyle = ep.strokeColor || ep.color;
+      ctx.lineWidth = ep.strokeWidth ?? 1.5;
+      ctx.beginPath();
+      ctx.roundRect(ep.x, ep.y, ep.width, ep.height, ep.radius);
+      ctx.stroke();
+
+      ctx.textBaseline = 'alphabetic';
+      applyCanvasLetterSpacing(ctx, 0.5);
+      ctx.font = `${ep.fontWeight} ${ep.fontSize}px "${ep.fontFamily}", monospace`;
+      ctx.fillStyle = ep.textColor;
+      ctx.fillText(ep.text, ep.textX, ep.textY);
+    } else {
+      // 'pill'
+      ctx.fillStyle = ep.color;
+      ctx.beginPath();
+      ctx.roundRect(ep.x, ep.y, ep.width, ep.height, ep.radius);
+      ctx.fill();
+
+      ctx.textBaseline = 'alphabetic';
+      applyCanvasLetterSpacing(ctx, 0);
+      ctx.font = `${ep.fontWeight} ${ep.fontSize}px "${ep.fontFamily}", sans-serif`;
+      ctx.fillStyle = ep.textColor;
+      ctx.fillText(ep.text, ep.textX, ep.textY);
+    }
     ctx.restore();
   }
 
-  // 6. Draw Tagline (if active)
+  // 7. Draw Tagline (if active)
   if (layout.tagline) {
     ctx.save();
     ctx.textBaseline = 'alphabetic';
@@ -173,7 +277,7 @@ export function drawLogoOnCanvas(
     ctx.restore();
   }
 
-  // 7. Atom Safe Crop Zone (80% Default Crop Rectangle)
+  // 8. Safe Crop Zone (80% Default Crop Rectangle)
   if (showSafeGrid) {
     ctx.save();
     ctx.strokeStyle = '#ff5a36';

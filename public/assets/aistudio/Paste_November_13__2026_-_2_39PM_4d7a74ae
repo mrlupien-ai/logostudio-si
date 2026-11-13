@@ -1,0 +1,285 @@
+# LogoStudio.si — Brand Architecture Upgrade (.SI Engine v2)
+
+You are a senior React + TypeScript + SVG engineer upgrading the existing **LogoStudio.si** app (repo `mrlupien-ai/logostudio-si`, last commit `56e7a2a refactor: rebrand to LogoStudio.si and add social kit`). This is an upgrade of working code, not a rewrite. Every change must extend what already exists.
+
+## 0. AUDIT FIRST (before writing any code)
+
+Read these files completely, then write a short implementation plan in the chat (files to touch, new fields, migration of old state). Only then start coding. Work in phases: Phase 1 (section 1B) → Phase 2 (sections 2–4) → Phase 3 (sections 5–7) → Phase 4 (section 8). Run lint/test/build after each phase.
+
+- `src/types/logo.ts` — `LogoState`, `LogoVariant`, `ConstructionSpec`
+- `src/utils/lockupLayout.ts` — `computeLockupLayout()`; **the single source of truth for geometry**, used by both renderers
+- `src/utils/svgBuilder.ts` — `generateFullLogoSvg()`, `buildEmblemInnerMarkup()`, `buildEmblemSvgMarkup()`
+- `src/utils/canvasRenderer.ts` — `drawLogoOnCanvas()` (PNG exports are drawn natively on canvas, not from the SVG)
+- `src/utils/exporter.ts` — `downloadBrandKitZip()`, `downloadAll10VariantsZip()`, `downloadAppIconsZip()`
+- `src/utils/constructionEngine.ts` (+ `constructionEngine.test.ts`) — already contains `hexToRgb`, `relativeLuminance`, `wcagContrastRatio`, `hashDomain`, `createPrng`
+- `src/utils/fontLoader.ts`, `src/utils/atomSpec.ts`
+- `src/components/Stage/DualCanvasStage.tsx` (view tabs: Master Canvases, Website Header Mockup, Mobile App Icon, Marketplace Card, Social Media Kit), `SocialMediaKitStage.tsx`, `Variants10Board.tsx`
+- `src/components/Inspector/*` (TypographyInspector has `Show .TLD` and `Brand Tagline / Slogan`; EmblemInspector has construction style, stroke, rotation, flips)
+- `src/components/PortfolioModal.tsx`, `src/data/domains.ts` (`TLDWATCH_223_DOMAINS`)
+- `src/App.tsx` (state init, `handleDomainGenerate`, `appMode`)
+
+### Facts the audit must confirm (they drive the design below)
+1. `LogoState.extStyle: 'superscript' | 'pill' | 'inline' | 'dot'` **already exists but is never read**: `lockupLayout.ts` always renders the TLD as a pill when `keepExt` is true.
+2. Tagline already exists as `tagline` + `showTagline` (+ `taglineFont`, `taglineTracking`). There is no separate "slogan" field.
+3. Tracking is a single px value `tracking` shared by both words (`lockupLayout.ts` line ~119).
+4. Colors are `primary` (Primary Ink), `secondary` (Brand Accent), `accent` (Spark Point). There are no `sparkColor`, `accentColor` or `canvasBg` fields.
+5. Exported SVGs load the font through `@import url(fonts.googleapis.com…)` inside `<style>`. That import is ignored when the SVG is opened as an image, in Figma/Illustrator, or offline, so downloaded SVGs fall back to sans-serif.
+6. WCAG helpers already exist in `constructionEngine.ts`.
+
+## 1. NON-NEGOTIABLE RULES
+
+1. **One geometry engine.** Every new visual feature (TLD modes, per-word tracking, spark dot, stencil cut, compound emblems) is computed in `computeLockupLayout()` / `buildEmblemInnerMarkup()`, then drawn by **both** `generateFullLogoSvg()` and `drawLogoOnCanvas()`. The live canvas, every mockup view, every PNG and every SVG must match pixel-for-pixel. Never add geometry to only one renderer.
+2. **Reuse existing fields; do not create duplicates.** Extend `extStyle` and `tagline`/`showTagline`; do not add `tldBadgeMode`, `slogan` or `showSlogan`.
+3. **Zero regressions.** Keep all existing views, inspector controls, the 10-concept board, the Symbol Vault, the AI panel, the Landing view, the Portfolio modal, the Atom 80% safe crop overlay and every file currently written by the existing ZIP exporters (same names). New output is added; existing output is not renamed or removed.
+4. **Client-side only.** Rasterization, serialization, brand book generation and ZIP archiving run in the browser. The only network requests allowed are Google Fonts CSS/font files.
+5. **No fabricated data.** Every number shown is computed from the current state. Anything heuristic is labelled as heuristic in the UI and in exported files.
+6. **Typed.** No `any`. New state fields get defaults, and old saved state or variants without them must still render (use `?? default` at read time).
+7. **No new dependencies** except where stated below.
+
+## 1B. PHASE 1 — FIX LIVE DEFECTS + RESPONSIVE LAYOUT (do this before any new feature)
+
+These were found by testing the live build (`logostudio-si.italicfont.workers.dev`, commit `56e7a2a`) in Chrome at 1920 / 1440 / 1280 / 1024 / 768 / 390 px. Fix every item, then re-test at the same widths.
+
+### Responsive layout (the app is currently desktop-1920-only)
+1. **Header collisions start at 1440px.** Measured overlaps:
+   - at 1440: `2-WORD`, `Remix` and `Generate 10 Concepts` overlap `Landing Page` and `Portfolio`;
+   - at 1280: the domain select and `Copy SVG` join in;
+   - at ≤1024: almost every header control overlaps, and the search input shows only `adstock.o`.
+
+   Rebuild `Header.tsx` as a 3-zone flex bar (brand · domain/search/generate · actions). Fixed rule: nothing overlaps at any width.
+   - Below 1536: the secondary actions (Landing Page, Portfolio, Copy SVG, Vector SVG) collapse to icon-only buttons with tooltips.
+   - Below 1280: they move into a `⋯ More` menu.
+   - `Generate 10 Concepts` and `Brand Kit (.ZIP)` always stay visible.
+2. **The stage shrinks to nothing.**
+   - At 1440 the main canvas is 389px wide; at 1280 it's 296px.
+   - At 1024 both canvases are about 180px, and the square card's `Export PNG` is cut off at the right edge.
+   - At ≤768 the stage is not visible at all: the concepts rail and the inspector take the whole width.
+
+   Layout rules:
+   - **≥1440:** 3 columns, as now, but with the inspector at a fixed 340px and the concepts panel at 260px.
+   - **1024–1439:** the concepts panel collapses to the 56px icon rail, and opens as an overlay drawer from `Concepts`. The inspector stays docked. The stage gets the rest.
+   - **<1024:** single column, with a bottom tab bar `Concepts · Canvas · Inspector` (Canvas is the default). Each panel is full-screen and scrolls on its own. The primary `Download Brand Kit` stays as a sticky bottom button.
+   - The stage must never be narrower than 360px wide while visible.
+3. **Main + square canvases are misaligned.**
+   - Their label rows and cards sit at different heights: the cards are vertically centred, and their heights differ.
+   - At 1440 the `IMAGE 1 — MAIN LOGO` / `IMAGE 2 — SQUARE LOGO` labels wrap onto 2–3 lines.
+   - At 1024 the meta text (`upload 1500 × 900 → Atom 750 × 450`) breaks into a one-word-per-line column.
+
+   Top-align both cards on a shared row. Keep labels on one line (`white-space: nowrap`), with the meta text truncated and shown in a tooltip. Stack the two cards vertically when the stage is narrower than 900px.
+4. **View tabs wrap.** `Social Media Kit` drops to a second row at 1440, and at 1024 the tabs and `Surface` pills wrap into 3 rows. Make the tab strip a single horizontal-scroll row with fade edges, and move `Surface` under it on narrow stages.
+5. **The bottom `Curated Color Palette` bar** wraps into two rows at 1440, and at 1024 it overlaps the stage content. Make it part of the stage's flex flow, not overlaid. Below 1280, collapse the three swatches to dots with hex values in tooltips.
+6. **Zoom cuts off the left side.** Clicking the zoom cycle (`100%` → `108%` …) scales the artboards inside a `justify-center` flex container with `overflow` auto. The left part of the main card becomes unreachable: the label reads `GE 1 — MAIN LOGO`, and the square card is cut off on the right. Use a scroll container with `margin: auto` centring (or `justify-content: safe center`), so every zoom level can be scrolled to both edges.
+7. **Concept thumbnails.** Long single-word names are squeezed until unreadable in the 100×60 cards; for `brightharbor.com`, #5 and #6 are illegible. Thumbnails must use the same fit logic as the main canvas, with a minimum font size; if it can't be reached, switch that thumbnail to the stacked layout.
+8. **Inspector.**
+   - Selects truncate their values (`Horizontal (Icon Lef…`, `1. Classic Authority (…`). Use full-width selects below 1440, or shorter option labels.
+   - The `10 Symbols` grid is cut off by the sticky export footer. Add bottom padding equal to the footer height.
+9. **Symbol Vault modal.** With the `Domain Semantic` filter (10 items), the tiles stretch into tall narrow columns (about 50×165px). Use the same fixed square tile grid as the `All` view, with `align-content: start`.
+10. **Social Media Kit.**
+    - It renders as a white panel inside the dark app. Make it follow the app theme, or wrap it in a framed artboard so it reads as a preview surface.
+    - Format cards in one row have different heights (1:1 vs 4:5 vs 3:4), so titles, tags and buttons sit at different y positions. Use equal-height preview boxes (`aspect-ratio` container with `object-fit: contain`), so text rows align.
+
+### Rendering defects
+11. **Exported SVG ≠ canvas** (verified side by side). The SVG from `Copy SVG` / `Vector SVG` has no `@font-face`, only `@import`. Opened as an image it falls back to a system font, and `Ad` collides with `Stock`, because the word positions were measured with Outfit. Fix with section 3.6 (embedded subset fonts).
+12. **The TLD pill touches the wordmark.** With `Show .TLD` on (`adstock.org`), the `.org` pill overlaps the `k` of `Stock`. The pill gap must be computed from the measured advance width, including tracking. Use at least 0.18em of the wordmark size.
+13. **Emblems disappear on dark surfaces.**
+    - Website Header Mockup (dark navbar): the `#0B132B` emblem sits on a near-black bar and only its green tab is visible.
+    - Mobile App Icon: on `Primary Ink Surface` and `Dark Glass Tinted`, the emblem body merges with the background. On `Brand Accent Gradient`, the green notch tab merges with the green background.
+
+    Every surface must run `ensureIconContrast()` on the container as well. Below 3:1 against the surface, switch the container to the light variant (white fill, primary icon) or add a 1px `rgba(255,255,255,.12)` keyline.
+14. **App icons have a container inside a container.** The full emblem (with its own rounded container, notch tab and spark dot) is placed inside the app squircle. It sits off-centre, and the spark dot touches the edge. For app icons, render only the construction's inner mark, centred inside the squircle's safe area (80%). The squircle itself becomes the container.
+15. **Decorative accents collide with the container stroke** (Organic Leaf Pin: the pink dot and lavender circle sit on top of the border). `validateConstructionSpec()` must reject accents that intersect the container outline unless the family defines them as straddling the edge, and nudge them inside.
+16. **Grey vignette** on the right edge of the main white canvas card (visible at 1920 and 1440). Remove the gradient overlay from the card, or limit it to the dark surface.
+
+### Logic defects
+17. **Word splitting fails outside the portfolio.** `parseDomainOrBrand('brightharbor.com')` returns `Brightharbor` + empty, shows `1-WORD`, and gives generic symbols (Sparkles, Layers, Building, Globe) with the niche `Modern Brand Identity & Enter…`. Add a dictionary-based segmenter for all-lowercase SLDs, run before the single-word fallback: an English word list bundled as a compact JSON of about 50k words, dynamic programming that maximises the product of word frequencies, with a minimum part length of 2. Feed the parts into the semantic symbol and niche lookup, so `harbor` → anchor / ship / lighthouse / waves.
+18. **Hard-coded prices and stats on every domain.** The Marketplace Card shows `$2,495 · or $208/mo`, `Buy Now $2,495`, `Lease $208 / mo`, `Min $1,250` and `Semantic Brand Score 9.6 / 10 (Tier-1)` for every domain (`DualCanvasStage.tsx` lines 1316–1418). Add optional state fields `listingPrice`, `leaseMonthly` and `minOffer`, editable in a small "Listing details" group of the Marketplace Card view. If empty, the cards show `Make an offer` and hide the lease and min rows. The score comes from `evaluateDomainBrandability()` (section 5.2).
+
+    The mockup stats `$1.84M ARR`, `99.94% SLA` and `$48,920` are fine as illustrative UI, but label them with a small `Sample data` tag.
+19. **Public landing (`LogoStudioLanding.tsx`).**
+    - Remove every mention of `Atom.com`, `Squadhelp` and `tldwatch.csv` from public UI. Use neutral wording: "marketplace 80% crop-safe", "domain marketplaces". The Atom presets stay inside the studio, where only I use them.
+    - The floating `Active view / Open Vector Studio` pill covers the top status bar at every width. Move it into the nav, or offset it below the bar.
+    - Below 768 the nav links vanish and there is no menu. Add a hamburger sheet.
+    - The plan tabs cut off at 390px. Make them horizontally scrollable.
+    - Unverifiable claims (`<12ms`, `Latency <12ms`, `100% Guaranteed`, `Sub-15ms Edge Execution`, `Region: Ljubljana`) must be removed or replaced with measured values.
+
+**Phase 1 exit check:** at 1920, 1440, 1280, 1024, 768, 390 and 360:
+- no element overlaps another in the header;
+- no control extends past the viewport;
+- the canvas stays visible and at least 360px wide;
+- no text is clipped except deliberate truncation with a tooltip.
+
+Prove it with a small script run in the preview console that reports overlapping header controls and elements past the right edge for each width. It must report 0.
+
+## 2. STATE EXTENSIONS (`src/types/logo.ts`)
+
+```ts
+export type ExtStyle = 'inline' | 'superscript' | 'pill' | 'dot' | 'tech-tag'; // extend the existing union with 'tech-tag'
+export type WordmarkAccentMode = 'none' | 'spark-dot' | 'stencil-slice-45';
+export type EmblemFusionMode = 'single' | 'monogram-negative' | 'dual-badge';
+export type MotionPreset = 'none' | 'draw-stroke' | 'kinetic-spin' | 'ambient-pulse';
+```
+
+Add to `LogoState` (and optionally to `LogoVariant`, so variants can carry them):
+- `tracking1Em: number` and `tracking2Em: number`. Range -0.06…+0.15, step 0.005, defaults -0.02 / -0.01. Migration: when absent, derive both from the legacy `tracking` px value (`tracking / fontSize`). From then on the layout uses the em values, and `tracking` stays only for backward compatibility.
+- `wordmarkAccent: WordmarkAccentMode`, default `'none'`
+- `emblemFusion: EmblemFusionMode`, default `'single'`
+- `secondaryIcon: string`, default the domain's 2nd semantic icon from `icons10`
+- `motionPreset: MotionPreset`, default `'none'`
+
+`extStyle` keeps its type (with `'tech-tag'` added) and default `'pill'`, so today's output is unchanged.
+
+## 3. RENDERING ENGINE
+
+### 3.1 Per-word optical tracking
+`computeLockupLayout()` measures `w1` with `tracking1Em × fontSize` and `w2` with `tracking2Em × fontSize`. Both renderers apply the matching `letter-spacing`. Widths, centering and the safe-crop fit must use the tracked widths.
+
+### 3.2 TLD rendering by `extStyle` (when `keepExt`)
+Layout returns a typed `ext` block with a `mode` field instead of the hard-coded `extPill`. Keep the field name `extPill` as an alias, so existing consumers don't break.
+- `inline` — baseline text after `w2`, color `accent`, weight 700, same size as `w2`.
+- `superscript` — 38% size, weight 800, color `accent`, raised so its cap height aligns with the wordmark's cap height, gap 0.12em.
+- `pill` — current behaviour (unchanged).
+- `dot` — current `dot-badge` circle in `accent`, followed by the TLD text in `secondary` (the dot replaces the period).
+- `tech-tag` — outlined rounded rect (`rx` 4 at 750px width, scaled), stroke `accent` 1.5, uppercase JetBrains Mono 34% size, weight 700, fill `accent`.
+
+All five modes are measured, so the lockup stays centred and inside the Atom 80% safe zone.
+
+### 3.3 Wordmark surgery (`wordmarkAccent`)
+- `spark-dot`: an accent node in `accent` (circle `r = 0.09 × capHeight`, or a 45° diamond when the font is geometric/mono), placed at the junction of `w1` and `w2`, top-aligned to cap height. Position it from the measured `w1` width; never from hard-coded coordinates.
+- `stencil-slice-45`: a 45° diagonal gap cut through the first glyph of `w1`. Build it with an SVG `<mask>`: a white rect plus a black rotated rectangle, `id` unique per render (`ls-stencil-${hash}`). A `clipPath` cannot subtract, so do not use one. Measure the first glyph's box with canvas `measureText` (`actualBoundingBoxAscent/Left/Right`) for the current font. Draw a complementary wedge in `accent` offset 2px along the cut. Canvas renderer: same result with `globalCompositeOperation = 'destination-out'` on an offscreen layer.
+
+### 3.4 Compound emblems (`emblemFusion`), inside the emblem coordinate space used by `buildEmblemInnerMarkup()`
+- `single` — current behaviour.
+- `monogram-negative` — the uppercase initial of `word1` in the brand font at weight 900, set inside the construction as a large background glyph. Use the construction's contrast color at 22% opacity, or knock it out of the container with a mask when the construction is a solid shape. The primary icon sits in the foreground, scaled to 70% of the normal icon box, with its contrast guaranteed by `ensureIconContrast()`.
+- `dual-badge` — the primary icon as today, plus a satellite badge at the container's top-right corner. The satellite is a circle in `accent`, with a ring the color of the current surface (white/dark/transparent → none), radius 16% of the emblem. Inside it sits `secondaryIcon`, scaled to 60% of the badge diameter, stroke `#05070B` or white (whichever passes contrast). Compute all coordinates from the construction's bounding box, never fixed numbers.
+
+### 3.5 Motion (`motionPreset`) — SVG only
+When `motionPreset !== 'none'`, `generateFullLogoSvg(state, { …, animated: true })` adds `class` hooks (`ls-emblem`, `ls-glyph`, `ls-word`, `ls-spark`) and a `<style>` block with the keyframes, so the downloaded `.svg` animates on its own.
+- `draw-stroke`: every stroked icon element gets `pathLength="1"`, `stroke-dasharray: 1`, `stroke-dashoffset: 1 → 0` over 0.95s `cubic-bezier(0.16,1,0.3,1)`. Do not use a fixed 140 dash length. The words reveal with opacity + 10px translateX after 0.18s, and the spark pulses with `scale(1.24)` every 2.2s (`transform-box: fill-box; transform-origin: center`).
+- `kinetic-spin`: the emblem goes from `rotate(-18deg) scale(.82)` to `rotate(4deg) scale(1.03)` to rest, over 0.8s `cubic-bezier(0.34,1.56,0.64,1)`.
+- `ambient-pulse`: the emblem breathes on a 2.8s loop (opacity 1 → .88, translateY 0 → -1.5px).
+- Wrap all of it in `@media (prefers-reduced-motion: reduce) { * { animation: none !important; } }`.
+- PNG exports are always static (final frame).
+- The live Master Canvas plays the animation through an inline SVG preview with a "Replay" button.
+
+### 3.6 Self-contained SVG fonts (fixes current exports)
+Replace the `@import` in `generateFullLogoSvg()` with embedded fonts, for every exported or copied SVG:
+1. Fetch the Google Fonts CSS for the family and the weights actually used, with `&text=` set to the exact characters rendered (w1 + w2 + ext + tagline + monogram). This returns a tiny subset.
+2. Fetch the referenced `woff2` and embed it as `@font-face { src: url(data:font/woff2;base64,…) }`.
+3. Cache by `family|weight|text` in memory.
+4. On network failure, fall back to the current `@import` and show a toast saying the SVG needs internet to render its font.
+
+Make `generateFullLogoSvg` async (`generateFullLogoSvgEmbedded`), or keep the sync version for the live preview and add an async export wrapper. All download, copy and ZIP paths must use the embedded version.
+
+## 4. UI CONTROLS (Right Inspector + top HUD)
+
+Follow the existing inspector styling (segment pills, 10–11px labels, dark surfaces).
+
+**TypographyInspector — WORDMARK & HIERARCHY**
+- Two precision sliders, "Word 1 Tracking" and "Word 2 Tracking", showing live mono values (`-0.020em`), plus a reset button.
+- When `Show .TLD` is on: a 5-segment selector `Inline · Sup · Pill · Dot · Tech Tag` bound to `extStyle`.
+- A 3-segment selector `Standard · Spark Dot · 45° Stencil` bound to `wordmarkAccent`.
+- Next to "Brand Tagline / Slogan": a `✨ .SI Tagline` button. It cycles deterministically through the 5 archetype taglines (section 5.2), writes `tagline`, and turns on `showTagline`.
+
+**EmblemInspector — VECTOR EMBLEM ARCHITECTURE**
+- A 3-segment selector `Single · Monogram + Symbol · Dual Badge` bound to `emblemFusion`.
+- With Dual Badge active: a compact picker of the domain's semantic icons (`icons10` / `iconGroups`), bound to `secondaryIcon`.
+
+**Motion** (in the Inspector and in the top HUD next to Copy SVG)
+- A `▶ Motion` pill: `Off · Stroke Draw · Kinetic · Pulse`.
+- An `Export Animated SVG` button (always exports with the selected preset, or `draw-stroke` if Off).
+
+**Top command bar**
+- `LogoStudio` in `#F8FAFC`, extrabold, plus a `.si` badge: mono, emerald text, indigo→emerald 25% gradient, emerald/40 border, `title="Superintelligent Brand Architecture Engine"`.
+- Keep the existing subtitle.
+- `<title>` in `index.html`: `LogoStudio.si — Superintelligent Vector & Brand Identity Studio`.
+
+## 5. `src/utils/siBrandIntelligence.ts` (pure, unit-tested)
+
+### 5.1 Color
+- Move `hexToRgb`, `relativeLuminance` and `wcagContrastRatio` from `constructionEngine.ts` into a new `src/utils/color.ts`, and re-export them from `constructionEngine.ts` so nothing breaks.
+- Add:
+  - `rgbToCmyk` (standard naive conversion, rounded %);
+  - `getWcagContrast(a, b) → { ratio (2 dp), rating: 'AAA'|'AA'|'AA Large'|'Fail', pass }`, with thresholds 7 / 4.5 / 3;
+  - `getClosestPantone(hex)`, which returns the nearest match by CIEDE2000 (implement it; do not use Euclidean RGB) from a reference table of Pantone Solid Coated approximations.
+- The UI and exports label this "Nearest Pantone® approx." and never present it as official. Use only sRGB values that you are confident are Pantone's published approximations. If unsure of an entry, leave it out rather than invent it. Target about 45 entries across navy, cobalt, violet, emerald, teal, amber, coral, red, slate and neutrals.
+
+### 5.2 `evaluateDomainBrandability(domain, word1, word2, ext, niche)` — deterministic
+- `visualSymmetry` (0–100): ascender, descender and x-height counts; balance between word lengths (±2 chars); total SLD length (sweet spot 5–10). Return the breakdown too, so the UI can show it.
+- `phoneticFlow` (0–100): vowel-group syllable count (2–3 is optimal), with a penalty for 4+ consonant clusters. Return the syllable count and a cadence label.
+- `tldAuthority` (0–100): .com 98; .ai/.si/.io 95; .org/.co/.net 90; others 84.
+- `brandIndex` = 0.35·visual + 0.35·phonetic + 0.30·tld.
+- `marketTier`: `'Premium' | 'Strong' | 'Solid' | 'Emerging'` from `brandIndex`. **No dollar figures:** this app has no sales data, and real pricing lives in my separate pricing tool.
+- `archetypeTaglines`: 5 `{archetype, tagline}` entries (Enterprise Authority, Disruptive AI, Minimalist FinTech, High-Velocity Growth, Category Standard). Build them from `word1`, `word2` and `nicheLabel`. Each archetype has 3–4 phrase templates, picked by `createPrng(hashDomain(domain))`, so different domains do not all get the same sentence shape. No title-case clichés repeated across archetypes.
+- `salesPitch`: 2 paragraphs, calm editorial voice, no hype. It covers name structure, length/syllables, TLD fit and the included identity kit. Templates are seeded per domain, like the taglines.
+
+Tests in `src/utils/siBrandIntelligence.test.ts`:
+- known WCAG pairs (#000/#fff = 21.00 AAA; #777/#fff ≈ 4.48 AA Large);
+- CMYK of pure colors;
+- the same domain gives the same output;
+- different domains give different tagline sets.
+
+## 6. NEW VIEW TAB — `✨ Brand Book & Dev` (`src/components/Stage/SiBrandBookStage.tsx`)
+
+Add the tab in `DualCanvasStage.tsx`, right after Social Media Kit.
+
+**Module A — Scorecard & taglines**
+- 4 KPI cards: Visual Symmetry, Phonetic & Recall, TLD Authority, Brand Index + `marketTier` pill. Each shows its breakdown.
+- Below, two columns: a Sales Pitch card with Copy, and a 5-row tagline matrix with an `Apply to Logo →` button per row (sets `tagline` and `showTagline`).
+
+**Module B — 6-slide A4 landscape brand book** (1.414:1 artboards in a 2-column grid; every slide uses the live SVG):
+1. **Manifesto & semantic DNA:** lockup, `word1 + word2 + .ext` breakdown, niche, 3 voice pillars derived from the archetype.
+2. **Construction & clear space:** lockup on a blueprint grid (`#6366F1`, dash 3 3), 1x clear-space callouts on all sides (x = emblem height × 0.25), minimum sizes 24px digital / 10mm print.
+3. **Color matrix:** Primary Ink / Brand Accent / Spark Point, each with swatch, HEX, RGB, CMYK, Pantone approx. and two live WCAG badges (vs `#FFFFFF`, vs `#0B0E17`).
+4. **Typography:** big `Aa`, A–Z a–z 0–9, weight contrast w1 vs w2, hierarchy H1 48 / H2 32 / Body 16 / Caption Mono 12.
+5. **Approved surfaces:** a 2×2 grid on white, `#090C13`, Primary Ink fill and 10% Brand Accent tint. Each surface uses the existing `bgMode` color rules, so contrast stays correct.
+6. **Misuse:** 4 red `✕ DO NOT` cards — stretch/skew, swapped colors, rotated lockup, neon drop-shadow.
+
+`⬇ Export Brand Book` produces `Brand-Guidelines-<domain>.html`: self-contained, with fonts embedded as in 3.6, all 6 slides, `@page { size: A4 landscape; margin: 0 }`, print color-adjust exact, one slide per page, and a screen-only toolbar with "Print / Save as PDF" (`window.print()`).
+
+**Module C — Dev handoff** (4 sub-tabs, each code block with Copy):
+1. `BrandLogo.tsx`: a zero-dependency component with the exact current geometry. Props `variant: 'horizontal'|'square'|'mark'`, `surface: 'light'|'dark'`, `animated?: boolean`, `className?`. Text is converted to the embedded `@font-face`, so it renders without Google Fonts.
+2. `tokens.css` (`--brand-ink`, `--brand-accent`, `--brand-spark`, `--font-brand`, `--tracking-word1`, `--tracking-word2`) and a Tailwind `theme.extend` snippet (v3 config plus a v4 `@theme` block).
+3. `head-seo.html`: favicon links, `theme-color`, Open Graph tags, and an `Organization` JSON-LD with `https://<domain>`, name, `slogan` (from tagline when shown) and logo URL.
+4. `⬇ Favicon & Manifest Suite (.zip)`: the square emblem rasterized via the canvas renderer at 16, 32, 180 (`apple-touch-icon.png`), 192 and 512, plus `icon.svg` and a filled `site.webmanifest` → `<domain>-favicon-suite.zip`.
+
+## 7. BRAND KIT ZIP (`downloadBrandKitZip`)
+
+Keep every file it writes today (same names, same root folder `<domain>-brand-kit-logostudio-si/`) and **add**:
+- `logos/logo-horizontal.svg`, `logos/logo-square.svg`, `logos/logo-animated.svg` (fonts embedded; animated uses the active preset, or `draw-stroke`)
+- `favicons/favicon-16x16.png`, `favicon-32x32.png`, `apple-touch-icon.png`, `icon-192x192.png`, `icon-512x512.png`, `icon.svg`, `site.webmanifest`
+- `dev/BrandLogo.tsx`, `dev/tokens.css`, `dev/tailwind.theme.js`, `dev/schema-org.json`
+- `brand-book/Brand-Guidelines-<domain>.html`
+- `brand-book/brand-scorecard.txt` (scores with breakdowns, the 5 taglines, the 2-paragraph pitch)
+- `README.md` describing every file, signed `LogoStudio.si — Brand Architecture Engine`
+
+Exported SVG comments, README files and JSON manifests use that same signature.
+
+## 8. PORTFOLIO BATCH EXPORT (inside `PortfolioModal`)
+
+- A checkbox on each domain card, plus a sticky action bar: `Select visible (max 25)` · `Clear` · a `N selected` badge.
+- A primary button, `⚡ Batch Export Selected (.zip)`.
+- For each selected domain, in sequence:
+  1. Build its full state with the same code path as `handleDomainGenerate`, reusing it as a pure function. Variant #1 / Core concept and palette.
+  2. `await ensureFontsLoaded(font)`.
+  3. Write into `<domain>/` of `LogoStudio-Batch-<yyyymmdd>.zip`:
+     - `main-1500x900.png` and `square-1200x1200.png` (the existing Atom upload sizes);
+     - `marketplace-750x450.png` and `marketplace-600x600.png`;
+     - `logo-horizontal.svg` and `logo-animated.svg` (embedded fonts);
+     - `brand-scorecard.txt`.
+  4. Yield with `await new Promise(r => setTimeout(r, 30))` and update an inline progress bar: `Rendering 4 / 10 — adstock.org`.
+- A Cancel button stops after the current domain and still offers the partial ZIP.
+- The batch must not touch the studio's current domain/state.
+
+## 9. VERIFICATION (required before you say it's done)
+
+0. Re-run the Phase 1 exit check at 1920 / 1440 / 1280 / 1024 / 768 / 390 / 360 px for the Studio (all 5 views + the new Brand Book tab) and the Landing page. Exercise every view at 390px through the bottom tab bar.
+1. `npm run lint` (tsc --noEmit), `npm test` (existing construction tests + new tests) and `npm run build`. All must pass. List any failure that existed before your changes separately.
+2. In the preview, for `adstock.org`, `endowment.net` and a single-word domain:
+   - cycle all 5 `extStyle` modes, 3 accents, 3 fusions and 4 motion presets;
+   - confirm the Master canvas, Header mockup, App icon, Marketplace card and Social kit all show the same geometry;
+   - confirm nothing crosses the 80% safe-crop overlay.
+3. Download one SVG and open it as a standalone file. The brand font must render with no network (check that no `@import` is left).
+4. Download the Brand Kit and list its file tree. Download the Brand Book HTML and confirm print preview shows 6 landscape pages.
+5. Run a batch of 3 portfolio domains and list the ZIP tree.
+6. Check the browser console for errors.
+7. Summarize what changed per file.

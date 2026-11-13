@@ -51,6 +51,11 @@ export interface ColorPalette {
   background?: string;
 }
 
+export type ExtStyle = 'inline' | 'superscript' | 'pill' | 'dot' | 'tech-tag';
+export type WordmarkAccentMode = 'none' | 'spark-dot' | 'stencil-slice-45';
+export type EmblemFusionMode = 'single' | 'monogram-negative' | 'dual-badge';
+export type MotionPreset = 'none' | 'draw-stroke' | 'kinetic-spin' | 'ambient-pulse';
+
 export interface LogoState {
   domain: string;
   brandName: string;
@@ -58,7 +63,7 @@ export interface LogoState {
   word2: string;
   ext: string;
   keepExt: boolean;
-  extStyle: 'superscript' | 'pill' | 'inline' | 'dot';
+  extStyle: ExtStyle;
   tagline: string;
   showTagline: boolean;
   taglineFont: string;
@@ -73,9 +78,15 @@ export interface LogoState {
   letterCase1: 'as-is' | 'uppercase' | 'lowercase' | 'capitalize';
   letterCase2: 'as-is' | 'uppercase' | 'lowercase' | 'capitalize';
   tracking: number;
+  tracking1Em: number;
+  tracking2Em: number;
+  wordmarkAccent: WordmarkAccentMode;
 
   // Emblem & Vector Mark
   activeIcon: string;
+  secondaryIcon: string;
+  emblemFusion: EmblemFusionMode;
+  motionPreset: MotionPreset;
   customSvgPath?: string;
   containerStyle: EmblemContainerStyle;
   construction?: ConstructionSpec;
@@ -100,6 +111,11 @@ export interface LogoState {
   gap: number;
   baselineOffset: number;
 
+  // Marketplace Listing Details (optional, user-editable)
+  listingPrice?: string;
+  leaseMonthly?: string;
+  minOffer?: string;
+
   // Niche classification
   nicheLabel: string;
   icons10: string[];
@@ -121,8 +137,14 @@ export interface LogoVariant {
   word2: string;
   ext: string;
   keepExt: boolean;
+  extStyle?: ExtStyle;
   typoContrast: TypoContrastStyle;
   activeIcon: string;
+  secondaryIcon?: string;
+  emblemFusion?: EmblemFusionMode;
+  wordmarkAccent?: WordmarkAccentMode;
+  tracking1Em?: number;
+  tracking2Em?: number;
   customSvgPath?: string;
   containerStyle: EmblemContainerStyle;
   construction?: ConstructionSpec;

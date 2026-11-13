@@ -813,11 +813,11 @@ export const SocialMediaKitStage: React.FC<SocialMediaKitStageProps> = ({ state 
         key={fmt.id}
         className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md transition flex flex-col justify-between overflow-hidden text-slate-900"
       >
-        {/* Top SVG Artwork Preview Area on Checkerboard Stage */}
+        {/* Top SVG Artwork Preview Area on Checkerboard Stage (Uniform h-[210px] across row) */}
         <div className="p-3 bg-slate-50 border-b border-slate-100">
-          <div className="checkerboard-surface rounded-xl overflow-hidden border border-slate-200/80 flex items-center justify-center p-2">
+          <div className="checkerboard-surface rounded-xl overflow-hidden border border-slate-200/80 h-[210px] flex items-center justify-center p-2">
             <div
-              className="w-full flex items-center justify-center [&>svg]:w-full [&>svg]:h-auto [&>svg]:max-h-[260px] [&>svg]:rounded-lg [&>svg]:shadow-sm"
+              className="w-full h-full flex items-center justify-center [&>svg]:max-h-full [&>svg]:w-auto [&>svg]:max-w-full [&>svg]:rounded-lg [&>svg]:shadow-sm"
               dangerouslySetInnerHTML={{ __html: previewSvg }}
             />
           </div>
@@ -876,7 +876,8 @@ export const SocialMediaKitStage: React.FC<SocialMediaKitStageProps> = ({ state 
   };
 
   return (
-    <div className="max-w-[1360px] mx-auto w-full bg-[#F8FAFC] text-slate-900 rounded-3xl border border-slate-200/80 shadow-2xl p-6 md:p-8 space-y-7">
+    <div className="max-w-[1360px] mx-auto w-full bg-[#0D131F] p-3 sm:p-4 rounded-[28px] border border-white/[0.08] shadow-2xl">
+      <div className="w-full bg-[#F8FAFC] text-slate-900 rounded-2xl border border-slate-200/80 p-5 md:p-7 space-y-7">
       {/* 1. Header & Bulk Export */}
       <div className="flex flex-wrap items-start justify-between gap-4 border-b border-slate-200 pb-5">
         <div className="space-y-1.5 max-w-2xl">
@@ -1091,6 +1092,7 @@ export const SocialMediaKitStage: React.FC<SocialMediaKitStageProps> = ({ state 
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

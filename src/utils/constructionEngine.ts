@@ -1,4 +1,7 @@
 import { ConstructionFamily, ConstructionSpec, EmblemContainerStyle } from '../types/logo';
+import { hexToRgb, relativeLuminance, wcagContrastRatio } from './color';
+
+export { hexToRgb, relativeLuminance, wcagContrastRatio };
 
 export const ALL_CONSTRUCTION_FAMILIES: readonly ConstructionFamily[] = [
   'cornerCut',
@@ -39,7 +42,7 @@ export const ALL_CONSTRUCTION_FAMILIES: readonly ConstructionFamily[] = [
   'prismTriangle',
 ] as const;
 
-const FAMILY_HUMAN_NAMES: Record<ConstructionFamily, string> = {
+export const FAMILY_HUMAN_NAMES: Record<ConstructionFamily, string> = {
   cornerCut: 'Corner Cutout',
   splitPanel: 'Split Monogram',
   isoSolid: 'Isometric Cube',
@@ -193,41 +196,8 @@ function pickOne<T>(rng: () => number, arr: readonly T[]): T {
 }
 
 /**
- * WCAG 2.1 relative luminance and contrast ratio calculation (pure TypeScript)
+ * WCAG 2.1 relative luminance and contrast ratio calculation imported from ./color
  */
-export function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const clean = (hex || '#000000').replace(/[^0-9a-fA-F]/g, '');
-  const full =
-    clean.length === 3
-      ? clean
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : clean.padEnd(6, '0').slice(0, 6);
-  const num = parseInt(full, 16);
-  return {
-    r: (num >> 16) & 255,
-    g: (num >> 8) & 255,
-    b: num & 255,
-  };
-}
-
-export function relativeLuminance(hex: string): number {
-  const { r, g, b } = hexToRgb(hex);
-  const transform = (v: number) => {
-    const s = v / 255;
-    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
-  };
-  return 0.2126 * transform(r) + 0.7152 * transform(g) + 0.0722 * transform(b);
-}
-
-export function wcagContrastRatio(hex1: string, hex2: string): number {
-  const l1 = relativeLuminance(hex1);
-  const l2 = relativeLuminance(hex2);
-  const brightest = Math.max(l1, l2);
-  const darkest = Math.min(l1, l2);
-  return (brightest + 0.05) / (darkest + 0.05);
-}
 
 export function ensureIconContrast(preferredIconHex: string, bgHex: string, c1: string): string {
   if (wcagContrastRatio(preferredIconHex, bgHex) >= 3.0) {
@@ -469,31 +439,36 @@ export function computeConstructionGeometry(spec: ConstructionSpec): ComputedCon
 
   const iconRect: Box2D = { x: ix, y: iy, w: iconSize, h: iconSize };
 
-  // Place accent in one of 8 perimeter slots around the emblem that NEVER overlaps iconRect
-  const accentSize = 16;
+  // Place accent in one of 8 slots cleanly inset inside mainBox or in outer corner clearance
+  // so it NEVER straddles the container border stroke or overlaps iconRect
+  const accentSize = 14;
+  const inLeft = mainBox.x + 10;
+  const inRight = mainBox.x + mainBox.w - 10 - accentSize;
+  const inTop = mainBox.y + 10;
+  const inBottom = mainBox.y + mainBox.h - 10 - accentSize;
   const candidateAccentBoxes: Box2D[] = [
-    { x: 164, y: 20, w: accentSize, h: accentSize }, // 0: NE
-    { x: 20, y: 20, w: accentSize, h: accentSize },  // 1: NW
-    { x: 164, y: 164, w: accentSize, h: accentSize }, // 2: SE
-    { x: 20, y: 164, w: accentSize, h: accentSize },  // 3: SW
-    { x: 92, y: 12, w: accentSize, h: accentSize },   // 4: N
-    { x: 170, y: 92, w: accentSize, h: accentSize },  // 5: E
-    { x: 92, y: 172, w: accentSize, h: accentSize },  // 6: S
-    { x: 14, y: 92, w: accentSize, h: accentSize },   // 7: W
+    { x: inRight, y: inTop, w: accentSize, h: accentSize },    // 0: Inset NE
+    { x: inLeft, y: inTop, w: accentSize, h: accentSize },     // 1: Inset NW
+    { x: inRight, y: inBottom, w: accentSize, h: accentSize }, // 2: Inset SE
+    { x: inLeft, y: inBottom, w: accentSize, h: accentSize },  // 3: Inset SW
+    { x: 180, y: 6, w: accentSize, h: accentSize },            // 4: Outer NE clearance
+    { x: 6, y: 6, w: accentSize, h: accentSize },              // 5: Outer NW clearance
+    { x: 180, y: 180, w: accentSize, h: accentSize },          // 6: Outer SE clearance
+    { x: 6, y: 180, w: accentSize, h: accentSize },            // 7: Outer SW clearance
   ];
 
   let chosenAccent = candidateAccentBoxes[accentPos % candidateAccentBoxes.length];
-  if (boxesOverlap(chosenAccent, iconRect, 2)) {
+  if (boxesOverlap(chosenAccent, iconRect, 3)) {
     for (let i = 0; i < candidateAccentBoxes.length; i++) {
       const cand = candidateAccentBoxes[(accentPos + i) % candidateAccentBoxes.length];
-      if (!boxesOverlap(cand, iconRect, 2)) {
+      if (!boxesOverlap(cand, iconRect, 3)) {
         chosenAccent = cand;
         break;
       }
     }
   }
   if (boxesOverlap(chosenAccent, iconRect, 1)) {
-    chosenAccent = { x: 10, y: 10, w: 14, h: 14 };
+    chosenAccent = { x: 6, y: 6, w: 12, h: 12 };
   }
 
   const isLightPlate =

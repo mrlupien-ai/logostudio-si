@@ -1,5 +1,6 @@
 import { ColorPalette, NicheIconPack } from '../types/logo';
 import { matchSemanticIconsForDomain } from './domainSemanticIcons';
+import { segmentDomainSld } from './wordSegmenter';
 
 export const TLDWATCH_223_DOMAINS = [
   "4kimages.com","adstock.org","affcar.com","affcart.com","affpet.com","allfancyfont.com","allfancyfonts.com",
@@ -350,13 +351,14 @@ export function parseDomainOrBrand(rawInput: string) {
       word1 = capitalize(tokens[0]);
       word2 = tokens.slice(1).map(capitalize).join('');
     } else {
-      word1 = capitalize(namePart);
-      word2 = "";
+      const [seg1, seg2] = segmentDomainSld(namePart);
+      word1 = seg1 || capitalize(namePart);
+      word2 = seg2 || "";
     }
   } else {
-    // If it's single word or camel, try splitting if long enough
-    word1 = capitalize(namePart);
-    word2 = "";
+    const [seg1, seg2] = segmentDomainSld(namePart);
+    word1 = seg1 || capitalize(namePart);
+    word2 = seg2 || "";
   }
 
   const isSingle = !word2;

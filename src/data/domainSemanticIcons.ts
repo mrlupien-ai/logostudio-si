@@ -393,6 +393,20 @@ export const SEMANTIC_KEYWORD_RULES: SemanticRule[] = [
     icons: ["Leaf", "TreePine", "Trees", "Sun", "Sprout", "Globe", "Wind", "Flower2", "Droplets", "Heart"],
     paletteIdx: 8,
   },
+  // Maritime, Harbor, Shipping & Coastal Navigation
+  {
+    keywords: ["harbor", "harbour", "port", "marine", "ocean", "sea", "anchor", "ship", "sail", "coast", "bay", "tide", "reef", "wave", "nautical", "dock", "fleet"],
+    niche: "Maritime, Harbor & Coastal Navigation",
+    icons: ["Anchor", "Ship", "Compass", "Waves", "Sailboat", "Navigation", "Sun", "Globe", "Wind", "ShieldCheck"],
+    paletteIdx: 6,
+  },
+  // Illumination, Energy, Clarity & Solar
+  {
+    keywords: ["bright", "light", "lum", "glow", "shine", "spark", "ray", "beam", "beacon", "prism", "aura"],
+    niche: "Illumination, Optics & Radiant Brand Identity",
+    icons: ["Sun", "Sparkles", "Lightbulb", "Zap", "Flame", "Star", "Compass", "Eye", "Aperture", "Award"],
+    paletteIdx: 4,
+  },
 ];
 
 export function matchSemanticIconsForDomain(
@@ -419,36 +433,47 @@ export function matchSemanticIconsForDomain(
   const extPart = cleaned.includes(".") ? "." + cleaned.split(".").slice(1).join(".") : "";
   const w1Label = optWord1 || (rootName.charAt(0).toUpperCase() + rootName.slice(1));
   const w2Label = optWord2 || (extPart ? extPart.replace(".", "").toUpperCase() : "Brand");
+  const w1Low = (optWord1 || "").toLowerCase();
+  const w2Low = (optWord2 || "").toLowerCase();
 
-  // 3. Score against all semantic keyword rules
+  // 3. Score against all semantic keyword rules (combine matches across w1 and w2)
   let bestRule: SemanticRule | null = null;
+  let secondRule: SemanticRule | null = null;
   let bestScore = 0;
+  let secondScore = 0;
 
   for (const rule of SEMANTIC_KEYWORD_RULES) {
     let score = 0;
     for (const kw of rule.keywords) {
-      if (rootName === kw) {
-        score += 10;
-      } else if (rootName.startsWith(kw) || rootName.endsWith(kw)) {
-        score += 5;
+      if (rootName === kw || w1Low === kw || w2Low === kw) {
+        score += 12;
+      } else if (rootName.startsWith(kw) || rootName.endsWith(kw) || w1Low.startsWith(kw) || w2Low.startsWith(kw)) {
+        score += 6;
       } else if (rootName.includes(kw)) {
         score += 3;
       }
     }
 
     if (score > bestScore) {
+      secondScore = bestScore;
+      secondRule = bestRule;
       bestScore = score;
       bestRule = rule;
+    } else if (score > secondScore) {
+      secondScore = score;
+      secondRule = rule;
     }
   }
 
   if (bestRule && bestScore > 0) {
-    const matchedIcons = bestRule.icons;
+    const primaryIcons = bestRule.icons;
+    const secondaryIcons = secondRule && secondScore > 0 ? secondRule.icons : primaryIcons;
+    const mergedIcons = Array.from(new Set([...primaryIcons.slice(0, 7), ...secondaryIcons, ...primaryIcons])).slice(0, 10);
     const groups: DomainIconGroups = {
       niche: bestRule.niche,
-      core: matchedIcons.slice(0, 4),
-      word1: { label: w1Label, icons: matchedIcons.slice(4, 7) },
-      word2: { label: w2Label, icons: matchedIcons.slice(7, 10) },
+      core: mergedIcons.slice(0, 4),
+      word1: { label: w1Label, icons: mergedIcons.slice(4, 7) },
+      word2: { label: w2Label, icons: mergedIcons.slice(7, 10) },
     };
     return {
       niche: bestRule.niche,
@@ -601,6 +626,10 @@ export const SEMANTIC_MORPHEME_INDEX: MorphemeCluster[] = [
   {
     morphemes: ["home", "homewares", "walls", "decorating", "travel", "hotels", "antarctic", "sports", "canes"],
     icons: ["House", "Building2", "Bed", "Hotel", "Plane", "Compass", "MapPin", "MountainSnow", "Snowflake", "Trophy", "Dumbbell", "Medal", "PaintRoller", "Palette", "Lamp"],
+  },
+  {
+    morphemes: ["harbor", "harbour", "port", "marine", "ocean", "sea", "anchor", "ship", "sail", "coast", "bay", "tide", "reef", "wave", "waves", "nautical", "dock", "fleet", "bright", "beacon"],
+    icons: ["Anchor", "Ship", "Compass", "Waves", "Sailboat", "Navigation", "Sun", "Sparkles", "Globe", "Wind", "ShieldCheck", "MapPin", "Lightbulb", "Star", "Award"],
   },
 ];
 
