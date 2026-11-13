@@ -11,6 +11,8 @@ import {
   Globe,
   FolderArchive,
   MoreHorizontal,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { TLDWATCH_223_DOMAINS } from '../data/domains';
 
@@ -25,6 +27,9 @@ interface HeaderProps {
   onDownloadSvg: () => void;
   onDownloadBrandKit: () => void;
   onExport10Zip: () => void;
+  /** Present only when the ExitFlip extension answered the ping; otherwise nothing about ExitFlip is rendered. */
+  onSendToExitflip?: () => void;
+  isSendingToExitflip?: boolean;
   copiedSvg: boolean;
   isExporting: boolean;
   isExporting10: boolean;
@@ -46,6 +51,8 @@ export const Header: React.FC<HeaderProps> = ({
   onDownloadSvg,
   onDownloadBrandKit,
   onExport10Zip,
+  onSendToExitflip,
+  isSendingToExitflip = false,
   copiedSvg,
   isExporting,
   isExporting10,
@@ -286,6 +293,19 @@ export const Header: React.FC<HeaderProps> = ({
           </span>
         </button>
 
+        {onSendToExitflip && (
+          <button
+            type="button"
+            onClick={onSendToExitflip}
+            disabled={isSendingToExitflip}
+            title={isSendingToExitflip ? 'Sending…' : 'Send to ExitFlip (1500×900 + 1200×1200 logos)'}
+            aria-label="Send to ExitFlip"
+            className="hidden min-[1800px]:flex p-1.5 rounded-lg bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/40 text-indigo-100 items-center transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+          >
+            {isSendingToExitflip ? <Loader2 className="w-4 h-4 shrink-0 animate-spin" /> : <Send className="w-4 h-4 shrink-0" />}
+          </button>
+        )}
+
         {/* Primary CTA: Brand Kit (.ZIP) — Always visible */}
         <button
           type="button"
@@ -330,6 +350,20 @@ export const Header: React.FC<HeaderProps> = ({
                     <Globe className="w-3.5 h-3.5 text-emerald-400" />
                     Landing Page (.SI)
                   </span>
+                </button>
+              )}
+              {onSendToExitflip && (
+                <button
+                  type="button"
+                  disabled={isSendingToExitflip}
+                  onClick={() => {
+                    setMoreOpen(false);
+                    onSendToExitflip();
+                  }}
+                  className="w-full px-2.5 py-2 rounded-lg hover:bg-white/[0.06] text-xs font-semibold text-indigo-100 flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  <Send className="w-3.5 h-3.5 text-indigo-300" />
+                  {isSendingToExitflip ? 'Sending…' : 'Send to ExitFlip'}
                 </button>
               )}
               <button

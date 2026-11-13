@@ -11,6 +11,8 @@ import {
   Sliders,
   Layers,
   X,
+  Send,
+  Loader2,
 } from 'lucide-react';
 import { LogoState, LogoVariant, TypoContrastStyle, MainLayoutMode } from './types/logo';
 import { parseDomainOrBrand, COLOR_PALETTES, BRAND_FONTS } from './data/domains';
@@ -34,6 +36,15 @@ import { PortfolioModal } from './components/PortfolioModal';
 import { Variants10Board } from './components/Stage/Variants10Board';
 import { DualCanvasStage } from './components/Stage/DualCanvasStage';
 import { LogoStudioLanding } from './components/Landing/LogoStudioLanding';
+import { ToastStack, useToasts } from './components/Toast';
+import {
+  ExitFlipStatus,
+  bridgeSupported,
+  getExtensionId,
+  pingExitFlip,
+  saveExtensionId,
+  sendLogoToExitFlip,
+} from './services/exitflipBridge';
 import {
   downloadBrandKitZip,
   downloadAll10VariantsZip,
@@ -428,6 +439,71 @@ export default function App() {
     }
   };
 
+  // ExitFlip bridge: opened from the extension (?domain=&from=exitflip&ext=) and "Send to ExitFlip".
+  const { toasts, push: pushToast, dismiss: dismissToast } = useToasts();
+  const [exitflipStatus, setExitflipStatus] = React.useState<ExitFlipStatus>('unavailable');
+  const [isSendingToExitflip, setIsSendingToExitflip] = React.useState(false);
+
+  const refreshExitflipStatus = React.useCallback(async () => {
+    if (!bridgeSupported() || !getExtensionId()) {
+      setExitflipStatus('unavailable');
+      return;
+    }
+    const r = await pingExitFlip();
+    setExitflipStatus(r.ok ? 'ready' : 'no-extension');
+  }, []);
+
+  const openedFromExitflip = React.useRef(false);
+  React.useEffect(() => {
+    if (openedFromExitflip.current) return;
+    openedFromExitflip.current = true;
+    const params = new URLSearchParams(window.location.search);
+    const ext = params.get('ext');
+    const dom = (params.get('domain') || '').trim().toLowerCase();
+    const fromExitflip = params.get('from') === 'exitflip';
+    if (ext) saveExtensionId(ext);
+    if (dom && /^(?=.{3,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$/.test(dom)) {
+      setAppMode('studio');
+      handleDomainGenerate(dom);
+      if (fromExitflip) pushToast('info', 'Opened from ExitFlip — choose a concept and press "Send to ExitFlip".');
+    }
+    if (params.has('domain') || params.has('from') || params.has('ext')) {
+      ['domain', 'from', 'ext'].forEach((k) => params.delete(k));
+      const q = params.toString();
+      window.history.replaceState(null, '', `${window.location.pathname}${q ? `?${q}` : ''}${window.location.hash}`);
+    }
+    refreshExitflipStatus();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  React.useEffect(() => {
+    const onFocus = () => refreshExitflipStatus();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, [refreshExitflipStatus]);
+
+  const handleSendToExitflip = async () => {
+    if (isSendingToExitflip) return;
+    setIsSendingToExitflip(true);
+    try {
+      const r = await sendLogoToExitFlip(state);
+      const dom = state.domain.trim().toLowerCase();
+      if (r.ok) {
+        pushToast(
+          'success',
+          `Sent to ExitFlip: ${dom}. Go back to the Atom tab and press «Încarcă logo pe Atom».` +
+            (r.inPortfolio === false ? ` (${dom} is not in your ExitFlip portfolio yet.)` : ''),
+          9000
+        );
+      } else {
+        pushToast('error', r.error || 'ExitFlip refused the logo.');
+        if (r.error && /did not answer/.test(r.error)) setExitflipStatus('no-extension');
+      }
+    } finally {
+      setIsSendingToExitflip(false);
+    }
+  };
+
   const semanticPool = React.useMemo(() => {
     return getExtendedSemanticIconsForDomain(
       state.domain,
@@ -707,6 +783,17 @@ export default function App() {
           </button>
         </div>
 
+        {exitflipStatus === 'ready' && (
+          <button
+            type="button"
+            onClick={handleSendToExitflip}
+            disabled={isSendingToExitflip}
+            className="w-full py-2 px-4 rounded-xl bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/40 text-indigo-100 font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+          >
+            {isSendingToExitflip ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            <span>{isSendingToExitflip ? 'Sending…' : 'Send to ExitFlip'}</span>
+          </button>
+        )}
         <button
           type="button"
           onClick={() => downloadBrandKitZip(state)}
@@ -721,6 +808,7 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col bg-[#06080D] text-slate-100 select-none overflow-hidden">
+      <ToastStack toasts={toasts} onDismiss={dismissToast} />
       {/* 1. TOP STUDIO COMMAND BAR (54px) */}
       <Header
         domainInput={state.domain}
@@ -744,6 +832,8 @@ export default function App() {
         }
         onDownloadBrandKit={() => downloadBrandKitZip(state)}
         onExport10Zip={() => downloadAll10VariantsZip(state)}
+        onSendToExitflip={exitflipStatus === 'ready' ? handleSendToExitflip : undefined}
+        isSendingToExitflip={isSendingToExitflip}
         copiedSvg={copiedFooterSvg}
         isExporting={false}
         isExporting10={false}

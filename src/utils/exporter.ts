@@ -10,6 +10,7 @@ import { drawLogoOnCanvas, loadSvgToImage } from './canvasRenderer';
 import { ensureFontLoaded } from './fontLoader';
 import { getClosestPantone, getWcagContrast, hexToRgb, rgbToCmyk, wcagContrastRatio } from './color';
 import { evaluateDomainBrandability } from './siBrandIntelligence';
+import { renderUploadCanvas } from './uploadPngs';
 
 export function downloadDataUrl(dataUrl: string, filename: string) {
   const link = document.createElement('a');
@@ -128,34 +129,7 @@ export async function downloadOffscreenPng(
   isSquare: boolean,
   customFilename?: string
 ): Promise<void> {
-  await ensureFontLoaded(state.fontFamily);
-  const emblemSvg = buildEmblemSvgMarkup(
-    {
-      containerStyle: state.containerStyle,
-      construction: state.construction,
-      activeIcon: state.activeIcon,
-      secondaryIcon: state.secondaryIcon,
-      emblemFusion: state.emblemFusion,
-      customSvgPath: state.customSvgPath,
-      primary: state.primary,
-      secondary: state.secondary,
-      accent: state.accent,
-      fontFamily: state.fontFamily,
-      word1: state.word1,
-      iconStrokeWidth: state.iconStrokeWidth,
-      iconRotation: state.iconRotation,
-      iconFlipH: state.iconFlipH,
-      iconFlipV: state.iconFlipV,
-    },
-    600
-  );
-  const img = await loadSvgToImage(emblemSvg);
-  const canvas = document.createElement('canvas');
-  if (isSquare) {
-    drawLogoOnCanvas(canvas, img, state, 600, 600, true, false, 2);
-  } else {
-    drawLogoOnCanvas(canvas, img, state, 750, 450, false, false, 2);
-  }
+  const canvas = await renderUploadCanvas(state, isSquare);
   const baseName = (state.domain || 'logo').replace(/[^a-z0-9]/gi, '-').toLowerCase();
   const filename =
     customFilename || (isSquare ? `${baseName}-1200x1200.png` : `${baseName}-1500x900.png`);
@@ -911,34 +885,8 @@ export async function downloadBrandKitZip(
     squarePngData = squareCanvas.toDataURL('image/png', 1.0).split(',')[1];
   } else {
     try {
-      const emblemSvg = buildEmblemSvgMarkup(
-        {
-          containerStyle: state.containerStyle,
-          construction: state.construction,
-          activeIcon: state.activeIcon,
-          secondaryIcon: state.secondaryIcon,
-          emblemFusion: state.emblemFusion,
-          customSvgPath: state.customSvgPath,
-          primary: state.primary,
-          secondary: state.secondary,
-          accent: state.accent,
-          fontFamily: state.fontFamily,
-          word1: state.word1,
-          iconStrokeWidth: state.iconStrokeWidth,
-          iconRotation: state.iconRotation,
-          iconFlipH: state.iconFlipH,
-          iconFlipV: state.iconFlipV,
-        },
-        600
-      );
-      const img = await loadSvgToImage(emblemSvg);
-      const offMain = document.createElement('canvas');
-      drawLogoOnCanvas(offMain, img, state, 750, 450, false, false, 2);
-      mainPngData = offMain.toDataURL('image/png', 1.0).split(',')[1];
-
-      const offSq = document.createElement('canvas');
-      drawLogoOnCanvas(offSq, img, state, 600, 600, true, false, 2);
-      squarePngData = offSq.toDataURL('image/png', 1.0).split(',')[1];
+      mainPngData = (await renderUploadCanvas(state, false)).toDataURL('image/png', 1.0).split(',')[1];
+      squarePngData = (await renderUploadCanvas(state, true)).toDataURL('image/png', 1.0).split(',')[1];
     } catch {
       // Continue if offscreen canvas fails
     }
