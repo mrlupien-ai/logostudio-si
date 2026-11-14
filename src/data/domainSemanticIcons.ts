@@ -409,6 +409,37 @@ export const SEMANTIC_KEYWORD_RULES: SemanticRule[] = [
   },
 ];
 
+const CLUSTER_PALETTE_BUCKETS: Record<number, number[]> = {
+  0: [0, 12, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23],
+  1: [1, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 102],
+  2: [2, 11, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43],
+  3: [3, 13, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53],
+  4: [4, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63],
+  5: [5, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73],
+  6: [6, 74, 75, 76, 77, 78, 79, 80, 81, 82],
+  7: [7, 10, 101, 103, 104, 105, 106, 107, 108, 109],
+  8: [8, 83, 84, 85, 86, 87, 88, 89, 90, 91],
+  9: [9, 92, 93, 94, 95, 96, 97, 98, 99, 100],
+};
+
+function hashDomainPaletteSeed(text: string): number {
+  let h = 2166136261;
+  for (let i = 0; i < text.length; i++) {
+    h ^= text.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return h >>> 0;
+}
+
+function pickPaletteForDomainCluster(cleanedDomain: string, clusterIdx: number): ColorPalette {
+  if (cleanedDomain === "adstock.org") {
+    return COLOR_PALETTES[0];
+  }
+  const bucket = CLUSTER_PALETTE_BUCKETS[Math.abs(clusterIdx) % 10] || CLUSTER_PALETTE_BUCKETS[0];
+  const idx = bucket[hashDomainPaletteSeed(cleanedDomain) % bucket.length] ?? 0;
+  return COLOR_PALETTES[idx % COLOR_PALETTES.length];
+}
+
 export function matchSemanticIconsForDomain(
   rawDomain: string,
   optWord1?: string,
@@ -424,7 +455,7 @@ export function matchSemanticIconsForDomain(
       niche: groups.niche,
       icons: flattenIconGroups(groups),
       groups,
-      palette: COLOR_PALETTES[paletteIdx % COLOR_PALETTES.length],
+      palette: pickPaletteForDomainCluster(cleaned, paletteIdx),
     };
   }
 
@@ -479,7 +510,7 @@ export function matchSemanticIconsForDomain(
       niche: bestRule.niche,
       icons: flattenIconGroups(groups),
       groups,
-      palette: COLOR_PALETTES[bestRule.paletteIdx % COLOR_PALETTES.length],
+      palette: pickPaletteForDomainCluster(cleaned, bestRule.paletteIdx),
     };
   }
 
@@ -496,7 +527,7 @@ export function matchSemanticIconsForDomain(
     niche: "Modern Brand Identity & Enterprise Craft",
     icons: flattenIconGroups(fallbackGroups),
     groups: fallbackGroups,
-    palette: COLOR_PALETTES[1],
+    palette: pickPaletteForDomainCluster(cleaned, hashDomainPaletteSeed(cleaned) % 10),
   };
 }
 

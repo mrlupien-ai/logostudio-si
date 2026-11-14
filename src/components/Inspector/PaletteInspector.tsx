@@ -34,6 +34,12 @@ export const PaletteInspector: React.FC<PaletteInspectorProps> = ({
       {/* Preset Palettes Quick Dropdown */}
       <div>
         <select
+          value={COLOR_PALETTES.findIndex(
+            (p) =>
+              p.primary.toLowerCase() === state.primary.toLowerCase() &&
+              p.secondary.toLowerCase() === state.secondary.toLowerCase() &&
+              p.accent.toLowerCase() === state.accent.toLowerCase()
+          )}
           onChange={(e) => {
             const idx = parseInt(e.target.value, 10);
             if (!isNaN(idx) && COLOR_PALETTES[idx]) {
@@ -47,10 +53,12 @@ export const PaletteInspector: React.FC<PaletteInspectorProps> = ({
           }}
           className="w-full bg-[#06080f] border border-[#232c42] rounded-lg px-2.5 py-1.5 text-xs text-white font-medium outline-none focus:border-indigo-500 cursor-pointer"
         >
-          <option value="">Select Curated Palette ({COLOR_PALETTES.length} presets)...</option>
+          <option value={-1} disabled>
+            Select Curated Palette ({COLOR_PALETTES.length} presets)...
+          </option>
           {COLOR_PALETTES.map((pal, idx) => (
             <option key={pal.name} value={idx}>
-              {pal.name} ({pal.primary} · {pal.secondary})
+              {idx + 1}. {pal.name} ({pal.primary} · {pal.secondary})
             </option>
           ))}
         </select>

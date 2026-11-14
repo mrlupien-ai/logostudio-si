@@ -9,6 +9,8 @@ import {
 } from './constructionEngine';
 import { buildEmblemSvgMarkup, buildEmblemInnerMarkup, emblemConfigFromState, generateFullLogoSvg } from './svgBuilder';
 import { computeLockupLayout } from './lockupLayout';
+import { COLOR_PALETTES, parseDomainOrBrand, TLDWATCH_223_DOMAINS } from '../data/domains';
+import { wcagContrastRatio } from './color';
 import { LogoState } from '../types/logo';
 
 const TEST_DOMAINS = [
@@ -423,5 +425,38 @@ describe('Per-Domain Emblem Construction Engine', () => {
     // Safe crop layout remains intact even with scaled/offset emblem
     const layout = computeLockupLayout(null, customState, 750, 450, false);
     expect(layout.isCutByDefaultCrop).toBe(false);
+  });
+
+  it('9. Curated Color Palettes: >= 100 unique palettes, valid hexes, WCAG-safe primary & secondary contrast on white, and broad portfolio distribution', () => {
+    expect(COLOR_PALETTES.length).toBeGreaterThanOrEqual(100);
+
+    const names = new Set<string>();
+    const pairs = new Set<string>();
+    const hexRegex = /^#[0-9A-F]{6}$/i;
+
+    for (const p of COLOR_PALETTES) {
+      expect(hexRegex.test(p.primary)).toBe(true);
+      expect(hexRegex.test(p.secondary)).toBe(true);
+      expect(hexRegex.test(p.accent)).toBe(true);
+
+      expect(names.has(p.name)).toBe(false);
+      names.add(p.name);
+
+      const pairKey = `${p.primary.toLowerCase()}|${p.secondary.toLowerCase()}`;
+      expect(pairs.has(pairKey)).toBe(false);
+      pairs.add(pairKey);
+
+      expect(wcagContrastRatio(p.primary, '#FFFFFF')).toBeGreaterThanOrEqual(7.0);
+      expect(wcagContrastRatio(p.secondary, '#FFFFFF')).toBeGreaterThanOrEqual(3.0);
+    }
+
+    // Keep adstock.org on Institutional Emerald (#0)
+    expect(parseDomainOrBrand('adstock.org').palette.name).toBe('Institutional Emerald');
+
+    // Verify 223 portfolio domains span many distinct curated palettes (well above the previous 10)
+    const usedPalettes = new Set(
+      TLDWATCH_223_DOMAINS.map((dom) => parseDomainOrBrand(dom).palette.name)
+    );
+    expect(usedPalettes.size).toBeGreaterThanOrEqual(75);
   });
 });

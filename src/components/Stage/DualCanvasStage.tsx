@@ -2050,7 +2050,8 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
                   value={COLOR_PALETTES.findIndex(
                     (p) =>
                       p.primary.toLowerCase() === state.primary.toLowerCase() &&
-                      p.secondary.toLowerCase() === state.secondary.toLowerCase()
+                      p.secondary.toLowerCase() === state.secondary.toLowerCase() &&
+                      p.accent.toLowerCase() === state.accent.toLowerCase()
                   )}
                   onChange={(e) => {
                     const idx = parseInt(e.target.value, 10);

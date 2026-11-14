@@ -418,7 +418,14 @@ export default function App() {
 
   // Cycle palette
   const handleCyclePalette = () => {
-    const nextIdx = (paletteIndex + 1) % COLOR_PALETTES.length;
+    const activeIdx = COLOR_PALETTES.findIndex(
+      (p) =>
+        p.primary.toLowerCase() === state.primary.toLowerCase() &&
+        p.secondary.toLowerCase() === state.secondary.toLowerCase() &&
+        p.accent.toLowerCase() === state.accent.toLowerCase()
+    );
+    const baseIdx = activeIdx >= 0 ? activeIdx : paletteIndex;
+    const nextIdx = (baseIdx + 1) % COLOR_PALETTES.length;
     setPaletteIndex(nextIdx);
     const p = COLOR_PALETTES[nextIdx];
     setState((prev) => ({

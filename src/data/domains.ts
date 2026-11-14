@@ -274,6 +274,7 @@ export const NICHE_ICON_PACKS: Record<string, NicheIconPack> = {
 };
 
 export const COLOR_PALETTES: ColorPalette[] = [
+  // Original 14 Presets (indices 0..13 preserved for backward compatibility)
   { name: "Institutional Emerald", primary: "#0B132B", secondary: "#00A878", accent: "#F59E0B" },
   { name: "Silicon Valley Cobalt", primary: "#0F172A", secondary: "#2563EB", accent: "#06B6D4" },
   { name: "Neural Violet & Rose", primary: "#171135", secondary: "#7C3AED", accent: "#F43F5E" },
@@ -287,7 +288,123 @@ export const COLOR_PALETTES: ColorPalette[] = [
   { name: "Monochrome Platinum", primary: "#000000", secondary: "#475569", accent: "#94A3B8" },
   { name: "Cyberpunk Sunrise", primary: "#1A0933", secondary: "#FF007A", accent: "#00F0FF" },
   { name: "Alpine Slate & Jade", primary: "#0F172A", secondary: "#059669", accent: "#10B981" },
-  { name: "Boutique Navy & Copper", primary: "#1B2A4A", secondary: "#C86D51", accent: "#D4AF37" }
+  { name: "Boutique Navy & Copper", primary: "#1B2A4A", secondary: "#C86D51", accent: "#D4AF37" },
+
+  // Cluster A: Fintech, Capital & Emerald Authority (14..23)
+  { name: "Sovereign Green & Gold", primary: "#052E16", secondary: "#15803D", accent: "#EAB308" },
+  { name: "Swiss Vault & Viridian", primary: "#0A192F", secondary: "#047857", accent: "#34D399" },
+  { name: "Wall Street Ink & Jade", primary: "#111827", secondary: "#0D9488", accent: "#FBBF24" },
+  { name: "Quantitative Teal", primary: "#042F2E", secondary: "#0F766E", accent: "#2DD4BF" },
+  { name: "Ledger Slate & Mint", primary: "#1E293B", secondary: "#059669", accent: "#A7F3D0" },
+  { name: "Bullion Forest", primary: "#071E12", secondary: "#166534", accent: "#F59E0B" },
+  { name: "Harbor Pine & Brass", primary: "#0B2B26", secondary: "#0E7490", accent: "#D97706" },
+  { name: "Capital Olive & Amber", primary: "#1A2E05", secondary: "#4D7C0F", accent: "#FACC15" },
+  { name: "Treasury Deep Teal", primary: "#083344", secondary: "#0891B2", accent: "#10B981" },
+  { name: "Nordic Pine & Citron", primary: "#0C231E", secondary: "#15803D", accent: "#A3E635" },
+
+  // Cluster B: Enterprise Tech, Cloud & Cobalt (24..33)
+  { name: "Cloud Azure & Cyan", primary: "#0C1B33", secondary: "#0284C7", accent: "#22D3EE" },
+  { name: "Sapphire Infrastructure", primary: "#091540", secondary: "#1D4ED8", accent: "#38BDF8" },
+  { name: "Quantum Navy & Electric", primary: "#0A1128", secondary: "#3B82F6", accent: "#F59E0B" },
+  { name: "Steel Blue & Coral", primary: "#172554", secondary: "#2563EB", accent: "#FB7185" },
+  { name: "Deep Cerulean Pulse", primary: "#082032", secondary: "#0369A1", accent: "#00E5A3" },
+  { name: "Midnight Blue & Glacier", primary: "#0F172A", secondary: "#1D4ED8", accent: "#7DD3FC" },
+  { name: "Data Center Cobalt", primary: "#0B1320", secondary: "#0052CC", accent: "#36B37E" },
+  { name: "Hyperlink Indigo Blue", primary: "#101D42", secondary: "#2563EB", accent: "#A855F7" },
+  { name: "Horizon Maritime", primary: "#0A2540", secondary: "#0073E6", accent: "#00D4B6" },
+  { name: "Arctic Blueprint", primary: "#132238", secondary: "#0369A1", accent: "#F43F5E" },
+
+  // Cluster C: AI, Neural Violet & Future Craft (34..43)
+  { name: "Astral Violet & Cyan", primary: "#1A0F36", secondary: "#6D28D9", accent: "#22D3EE" },
+  { name: "Amethyst Neural Net", primary: "#2E1065", secondary: "#9333EA", accent: "#34D399" },
+  { name: "Velvet Iris & Coral", primary: "#1E1633", secondary: "#7C3AED", accent: "#FB923C" },
+  { name: "Deep Plum & Magenta", primary: "#3B0764", secondary: "#A21CAF", accent: "#F472B6" },
+  { name: "Cosmic Grape & Gold", primary: "#1F1235", secondary: "#7E22CE", accent: "#FBBF24" },
+  { name: "Cyber Lavender Ink", primary: "#19132B", secondary: "#6366F1", accent: "#38BDF8" },
+  { name: "Twilight Orchid", primary: "#27104E", secondary: "#8B5CF6", accent: "#EC4899" },
+  { name: "Synthesis Purple", primary: "#150E29", secondary: "#9333EA", accent: "#2DD4BF" },
+  { name: "Royal Magenta & Mint", primary: "#2A113B", secondary: "#C026D3", accent: "#34D399" },
+  { name: "Dusk Indigo & Amber", primary: "#14112E", secondary: "#5B21B6", accent: "#F59E0B" },
+
+  // Cluster D: E-Commerce, Craft, Copper & Energy (44..53)
+  { name: "Ember Charcoal & Tangerine", primary: "#1C1917", secondary: "#EA580C", accent: "#FBBF24" },
+  { name: "Terracotta Clay & Teal", primary: "#291711", secondary: "#C2410C", accent: "#14B8A6" },
+  { name: "Saffron Graphite", primary: "#18181B", secondary: "#D97706", accent: "#38BDF8" },
+  { name: "Ochre Studio", primary: "#261C15", secondary: "#B45309", accent: "#FB7185" },
+  { name: "Copperhead & Sage", primary: "#23140E", secondary: "#B94A22", accent: "#10B981" },
+  { name: "Sunset Vermilion", primary: "#1F120F", secondary: "#DC2626", accent: "#FACC15" },
+  { name: "Marketplace Flame", primary: "#16181D", secondary: "#EA580C", accent: "#22C55E" },
+  { name: "Sunburst Obsidian", primary: "#121216", secondary: "#C2410C", accent: "#38BDF8" },
+  { name: "Boutique Marigold", primary: "#221912", secondary: "#B45309", accent: "#F59E0B" },
+  { name: "Burnt Sienna & Mint", primary: "#27130C", secondary: "#9A3412", accent: "#2DD4BF" },
+
+  // Cluster E: Marine, Clean SaaS, Bio & Health (54..63)
+  { name: "BioMed Lagoon", primary: "#052E32", secondary: "#0D9488", accent: "#A3E635" },
+  { name: "Clinical Cerulean", primary: "#08243B", secondary: "#0891B2", accent: "#34D399" },
+  { name: "Baltic Petrol", primary: "#07272B", secondary: "#0F766E", accent: "#F59E0B" },
+  { name: "Vitality Seafoam", primary: "#0A2E2A", secondary: "#059669", accent: "#38BDF8" },
+  { name: "Pacific Deep & Sky", primary: "#042331", secondary: "#0369A1", accent: "#2DD4BF" },
+  { name: "Botanical Verdigris", primary: "#0B2822", secondary: "#0D9488", accent: "#F472B6" },
+  { name: "Aqua Core & Gold", primary: "#062938", secondary: "#0284C7", accent: "#FACC15" },
+  { name: "Clean Lab Teal", primary: "#0F2936", secondary: "#0891B2", accent: "#FB7185" },
+  { name: "Pelagic Slate", primary: "#0E222E", secondary: "#0F766E", accent: "#22D3EE" },
+  { name: "Glacial Mint Ink", primary: "#0D2428", secondary: "#047857", accent: "#60A5FA" },
+
+  // Cluster F: Editorial, Media, Crimson & Rose (64..73)
+  { name: "Velvet Bordeaux & Gold", primary: "#3B0A18", secondary: "#BE123C", accent: "#FBBF24" },
+  { name: "Cinema Scarlet", primary: "#180C11", secondary: "#DC2626", accent: "#38BDF8" },
+  { name: "Magazine Ruby", primary: "#2D0A18", secondary: "#E11D48", accent: "#A78BFA" },
+  { name: "Burgundy Heritage", primary: "#450A0A", secondary: "#B91C1C", accent: "#F59E0B" },
+  { name: "Rose Quartz Ink", primary: "#2E0E24", secondary: "#DB2777", accent: "#22D3EE" },
+  { name: "Magenta Press", primary: "#270D21", secondary: "#BE185D", accent: "#34D399" },
+  { name: "Garnet & Coral", primary: "#360B17", secondary: "#9F1239", accent: "#FB923C" },
+  { name: "Studio Carmine", primary: "#1A0F14", secondary: "#E11D48", accent: "#2DD4BF" },
+  { name: "Neon Fuchsia Night", primary: "#230A29", secondary: "#C026D3", accent: "#FACC15" },
+  { name: "Oxblood & Brass", primary: "#330B0B", secondary: "#991B1B", accent: "#EAB308" },
+
+  // Cluster G: Developer, Terminal, Cyber & Indigo (74..82)
+  { name: "Terminal Indigo & Lime", primary: "#0B1021", secondary: "#4338CA", accent: "#84CC16" },
+  { name: "Matrix Deep Slate", primary: "#0F172A", secondary: "#4F46E5", accent: "#10B981" },
+  { name: "Darkroom Electric", primary: "#0A0E1A", secondary: "#6366F1", accent: "#F43F5E" },
+  { name: "Kernel Cobalt & Teal", primary: "#111936", secondary: "#3730A3", accent: "#2DD4BF" },
+  { name: "Compiler Violet", primary: "#13112B", secondary: "#4F46E5", accent: "#FBBF24" },
+  { name: "Syntax Charcoal & Cyan", primary: "#141824", secondary: "#0891B2", accent: "#A855F7" },
+  { name: "Neon Grid & Coral", primary: "#0D1326", secondary: "#4338CA", accent: "#FB7185" },
+  { name: "API Blueprint", primary: "#0B162C", secondary: "#1D4ED8", accent: "#F59E0B" },
+  { name: "DevOps Slate & Rose", primary: "#151B2B", secondary: "#6D28D9", accent: "#FB7185" },
+
+  // Cluster H: Mobility, Sports, Eco & Fresh Lime (83..91)
+  { name: "Trackside Carbon & Emerald", primary: "#0D1310", secondary: "#15803D", accent: "#FACC15" },
+  { name: "Velocity Pine & Orange", primary: "#091F14", secondary: "#16A34A", accent: "#F97316" },
+  { name: "Aero Asphalt & Cyan", primary: "#14171A", secondary: "#047857", accent: "#22D3EE" },
+  { name: "Eco Canopy & Amber", primary: "#0B2615", secondary: "#166534", accent: "#FBBF24" },
+  { name: "Turf Green & Sky", primary: "#0F2918", secondary: "#15803D", accent: "#38BDF8" },
+  { name: "Moss Architecture", primary: "#192316", secondary: "#3F6212", accent: "#F59E0B" },
+  { name: "Kinetic Olive & Coral", primary: "#1C2411", secondary: "#4D7C0F", accent: "#FB7185" },
+  { name: "Nitro Forest & Teal", primary: "#071B12", secondary: "#059669", accent: "#2DD4BF" },
+  { name: "Verdant Asphalt", primary: "#121B15", secondary: "#16A34A", accent: "#A78BFA" },
+
+  // Cluster I: Luxury, Hospitality, Espresso & Bronze (92..100)
+  { name: "Espresso Roast & Gold", primary: "#291810", secondary: "#B45309", accent: "#FBBF24" },
+  { name: "Cognac Leather & Sky", primary: "#2E1A12", secondary: "#9A3412", accent: "#38BDF8" },
+  { name: "Dark Walnut & Emerald", primary: "#24160F", secondary: "#78350F", accent: "#10B981" },
+  { name: "Mahogany Reserve", primary: "#331510", secondary: "#B91C1C", accent: "#F59E0B" },
+  { name: "Truffle Umber & Rose", primary: "#261B18", secondary: "#9F1239", accent: "#F472B6" },
+  { name: "Roasted Mocha & Mint", primary: "#211510", secondary: "#A16207", accent: "#34D399" },
+  { name: "Atelier Bronze", primary: "#1F1916", secondary: "#92400E", accent: "#22D3EE" },
+  { name: "Chestnut Editorial", primary: "#2C1B14", secondary: "#C2410C", accent: "#A3E635" },
+  { name: "Amberwood & Indigo", primary: "#251811", secondary: "#D97706", accent: "#818CF8" },
+
+  // Cluster J: Minimalist, Monochrome, Architecture & Typography (101..109)
+  { name: "Bauhaus Carbon & Red", primary: "#111111", secondary: "#DC2626", accent: "#FACC15" },
+  { name: "Swiss Ink & Cobalt", primary: "#0A0A0A", secondary: "#1D4ED8", accent: "#38BDF8" },
+  { name: "Graphite Mono & Mint", primary: "#18181B", secondary: "#52525B", accent: "#10B981" },
+  { name: "Charcoal Concrete & Amber", primary: "#1F2937", secondary: "#4B5563", accent: "#F59E0B" },
+  { name: "Obsidian Print & Rose", primary: "#0F0F12", secondary: "#3F3F46", accent: "#F43F5E" },
+  { name: "Architectural Iron & Cyan", primary: "#1C1E26", secondary: "#475569", accent: "#22D3EE" },
+  { name: "Newspaper Ink & Emerald", primary: "#141414", secondary: "#334155", accent: "#059669" },
+  { name: "Nordic Basalt & Violet", primary: "#1E2028", secondary: "#475569", accent: "#8B5CF6" },
+  { name: "Brutalist Jet & Gold", primary: "#09090B", secondary: "#374151", accent: "#EAB308" }
 ];
 
 export const BRAND_FONTS = [
