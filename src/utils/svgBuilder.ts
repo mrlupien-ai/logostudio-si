@@ -10,7 +10,12 @@ import {
   MotionPreset,
 } from '../types/logo';
 import { computeLockupLayout } from './lockupLayout';
-import { computeConstructionGeometry, hashDomain, renderConstruction } from './constructionEngine';
+import {
+  computeConstructionGeometry,
+  ensureIconContrast,
+  hashDomain,
+  renderConstruction,
+} from './constructionEngine';
 import { fetchEmbeddedFontCss } from './fontLoader';
 
 type LucideIconComp = React.ComponentType<{
@@ -120,6 +125,82 @@ export interface EmblemMarkupConfig {
   iconFlipV?: boolean;
   markOnly?: boolean;
   markColor?: string;
+  // Independent Fundal (Background) & Icon Layer Controls
+  showEmblemBg?: boolean;
+  showEmblemIcon?: boolean;
+  emblemBgColor?: string;
+  emblemBgAccentColor?: string;
+  emblemIconColor?: string;
+  emblemBgScale?: number;
+  emblemBgOffsetX?: number;
+  emblemBgOffsetY?: number;
+  emblemIconScale?: number;
+  emblemIconOffsetX?: number;
+  emblemIconOffsetY?: number;
+  surfaceBgHex?: string;
+}
+
+export function emblemConfigFromState(
+  state: LogoState | LogoVariant,
+  overrides: Partial<EmblemMarkupConfig> = {}
+): EmblemMarkupConfig {
+  const s = state as LogoState;
+  const v = state as LogoVariant;
+  return {
+    containerStyle: state.containerStyle,
+    construction: state.construction,
+    activeIcon: state.activeIcon,
+    secondaryIcon: s.secondaryIcon || v.secondaryIcon,
+    emblemFusion: s.emblemFusion || v.emblemFusion,
+    customSvgPath: s.customSvgPath || v.customSvgPath,
+    primary: state.primary,
+    secondary: state.secondary,
+    accent: state.accent,
+    fontFamily: state.fontFamily,
+    word1: state.word1,
+    iconStrokeWidth: s.iconStrokeWidth || 2.2,
+    iconRotation: s.iconRotation || 0,
+    iconFlipH: s.iconFlipH || false,
+    iconFlipV: s.iconFlipV || false,
+    showEmblemBg: s.showEmblemBg ?? v.showEmblemBg,
+    showEmblemIcon: s.showEmblemIcon ?? v.showEmblemIcon,
+    emblemBgColor: s.emblemBgColor ?? v.emblemBgColor,
+    emblemBgAccentColor: s.emblemBgAccentColor ?? v.emblemBgAccentColor,
+    emblemIconColor: s.emblemIconColor ?? v.emblemIconColor,
+    emblemBgScale: s.emblemBgScale ?? v.emblemBgScale,
+    emblemBgOffsetX: s.emblemBgOffsetX ?? v.emblemBgOffsetX,
+    emblemBgOffsetY: s.emblemBgOffsetY ?? v.emblemBgOffsetY,
+    emblemIconScale: s.emblemIconScale ?? v.emblemIconScale,
+    emblemIconOffsetX: s.emblemIconOffsetX ?? v.emblemIconOffsetX,
+    emblemIconOffsetY: s.emblemIconOffsetY ?? v.emblemIconOffsetY,
+    ...overrides,
+  };
+}
+
+export function computeEmblemBleed(config: EmblemMarkupConfig): number {
+  const showBg = config.showEmblemBg !== false;
+  const showIcon = config.showEmblemIcon !== false;
+  const bgScale = Number.isFinite(config.emblemBgScale) ? config.emblemBgScale! : 1;
+  const bgOx = Number.isFinite(config.emblemBgOffsetX) ? Math.abs(config.emblemBgOffsetX!) : 0;
+  const bgOy = Number.isFinite(config.emblemBgOffsetY) ? Math.abs(config.emblemBgOffsetY!) : 0;
+  const icScale = Number.isFinite(config.emblemIconScale) ? config.emblemIconScale! : 1;
+  const icOx = Number.isFinite(config.emblemIconOffsetX) ? Math.abs(config.emblemIconOffsetX!) : 0;
+  const icOy = Number.isFinite(config.emblemIconOffsetY) ? Math.abs(config.emblemIconOffsetY!) : 0;
+
+  if (
+    bgScale <= 1.02 &&
+    icScale <= 1.05 &&
+    bgOx <= 2 &&
+    bgOy <= 2 &&
+    icOx <= 8 &&
+    icOy <= 8
+  ) {
+    return 0;
+  }
+
+  const bgExtent = showBg ? Math.max(0, 96 * bgScale - 96) + Math.max(bgOx, bgOy) : 0;
+  const icExtent = showIcon ? Math.max(0, 74 * icScale - 90) + Math.max(icOx, icOy) : 0;
+  return Math.max(0, Math.ceil(Math.max(bgExtent, icExtent) + 8));
 }
 
 export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
@@ -129,6 +210,56 @@ export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
   const strokeW = config.iconStrokeWidth || 2.2;
   const initChar = (config.word1 ? config.word1[0] : 'A').toUpperCase();
   const fusion: EmblemFusionMode = config.emblemFusion || 'single';
+
+  const showBg = config.showEmblemBg !== false;
+  const showIcon = config.showEmblemIcon !== false;
+  const bgC1 = config.emblemBgColor || c1;
+  const bgC2 = config.emblemBgAccentColor || c2;
+  const bgScale = Number.isFinite(config.emblemBgScale)
+    ? Math.max(0.4, Math.min(1.6, config.emblemBgScale!))
+    : 1;
+  const bgOx = Number.isFinite(config.emblemBgOffsetX)
+    ? Math.max(-50, Math.min(50, config.emblemBgOffsetX!))
+    : 0;
+  const bgOy = Number.isFinite(config.emblemBgOffsetY)
+    ? Math.max(-50, Math.min(50, config.emblemBgOffsetY!))
+    : 0;
+  const iconScaleVal = Number.isFinite(config.emblemIconScale)
+    ? Math.max(0.35, Math.min(1.75, config.emblemIconScale!))
+    : 1;
+  const iconOx = Number.isFinite(config.emblemIconOffsetX)
+    ? Math.max(-50, Math.min(50, config.emblemIconOffsetX!))
+    : 0;
+  const iconOy = Number.isFinite(config.emblemIconOffsetY)
+    ? Math.max(-50, Math.min(50, config.emblemIconOffsetY!))
+    : 0;
+
+  const hasLayerOverrides =
+    !showBg ||
+    !showIcon ||
+    Boolean(config.emblemBgColor || config.emblemBgAccentColor || config.emblemIconColor) ||
+    bgScale !== 1 ||
+    bgOx !== 0 ||
+    bgOy !== 0 ||
+    iconScaleVal !== 1 ||
+    iconOx !== 0 ||
+    iconOy !== 0;
+
+  if (!showBg && !showIcon && !config.markOnly) {
+    return '';
+  }
+
+  const wrapBg = (markup: string): string => {
+    if (!showBg || !markup) return '';
+    if (bgScale === 1 && bgOx === 0 && bgOy === 0) return markup;
+    return `<g transform="translate(${100 + bgOx}, ${100 + bgOy}) scale(${bgScale}) translate(-100, -100)">${markup}</g>`;
+  };
+
+  const wrapIcon = (markup: string, cx: number, cy: number): string => {
+    if (!showIcon || !markup) return '';
+    if (iconScaleVal === 1 && iconOx === 0 && iconOy === 0) return markup;
+    return `<g transform="translate(${cx + iconOx}, ${cy + iconOy}) scale(${iconScaleVal}) translate(${-cx}, ${-cy})">${markup}</g>`;
+  };
 
   const rot = config.iconRotation || 0;
   const scaleX = config.iconFlipH ? -1 : 1;
@@ -170,28 +301,32 @@ export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
   // Defect 14 fix: when rendering inside an external squircle container (App Icon view),
   // markOnly renders the inner geometric symbol + accent without a second outer box container.
   if (config.markOnly) {
-    const fg = config.markColor || '#FFFFFF';
+    if (!showBg && !showIcon) return '';
+    const fg = config.emblemIconColor || config.markColor || '#FFFFFF';
     if (fusion === 'monogram-negative') {
-      return `
-        <text x="64" y="138" font-family="'${config.fontFamily}', sans-serif" font-weight="900" font-size="112" fill="${c2}" opacity="0.38" text-anchor="middle">${initChar}</text>
-        <circle cx="124" cy="102" r="48" fill="${c1}" stroke="${c2}" stroke-width="3.5"/>
-        ${renderIcon(86, 64, 76, fg)}
+      const bgPart = wrapBg(`
+        <text x="64" y="138" font-family="'${config.fontFamily}', sans-serif" font-weight="900" font-size="112" fill="${bgC2}" opacity="0.38" text-anchor="middle">${initChar}</text>
+        <circle cx="124" cy="102" r="48" fill="${bgC1}" stroke="${bgC2}" stroke-width="3.5"/>
         <circle cx="158" cy="52" r="9" fill="${c3}"/>
-      `;
+      `);
+      const icPart = showBg
+        ? wrapIcon(renderIcon(86, 64, 76, fg), 124, 102)
+        : wrapIcon(renderIcon(40, 40, 120, fg), 100, 100);
+      return `${bgPart}${icPart}`;
     }
     if (fusion === 'dual-badge') {
       const secIcon = config.secondaryIcon || 'Sparkles';
-      return `
-        ${renderIcon(28, 28, 114, fg)}
-        <rect x="114" y="114" width="66" height="66" rx="20" fill="${c2}" stroke="${c1}" stroke-width="4"/>
-        ${renderSpecificIcon(secIcon, 127, 127, 40, '#FFFFFF', false)}
+      const primaryIc = wrapIcon(renderIcon(28, 28, 114, fg), 85, 85);
+      const badgeBg = wrapBg(`
+        <rect x="114" y="114" width="66" height="66" rx="20" fill="${bgC2}" stroke="${bgC1}" stroke-width="4"/>
         <circle cx="172" cy="118" r="7" fill="${c3}"/>
-      `;
+      `);
+      const badgeIc = showIcon ? renderSpecificIcon(secIcon, 127, 127, 40, '#FFFFFF', false) : '';
+      return `${primaryIc}${badgeBg}${badgeIc}`;
     }
-    return `
-      <circle cx="156" cy="46" r="10" fill="${c3}"/>
-      ${renderIcon(40, 40, 120, fg)}
-    `;
+    const accentDot = wrapBg(`<circle cx="156" cy="46" r="10" fill="${c3}"/>`);
+    const iconMark = wrapIcon(renderIcon(40, 40, 120, fg), 100, 100);
+    return `${accentDot}${iconMark}`;
   }
 
   // Compound Emblem Fusion Mode 2: Monogram + Negative-Space Symbol
@@ -201,14 +336,25 @@ export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
       : { mainBox: { x: 18, y: 20, w: 164, h: 160 } };
     const mb = geom.mainBox;
     const rx = Number(config.construction?.params?.radius ?? 38);
-    return `
-      <rect x="${mb.x}" y="${mb.y}" width="${mb.w}" height="${mb.h}" rx="${rx}" fill="${c1}"/>
-      <rect x="${mb.x}" y="${mb.y}" width="${Math.round(mb.w * 0.52)}" height="${mb.h}" rx="${rx}" fill="${c2}" opacity="0.24"/>
+    const bgPart = wrapBg(`
+      <rect x="${mb.x}" y="${mb.y}" width="${mb.w}" height="${mb.h}" rx="${rx}" fill="${bgC1}"/>
+      <rect x="${mb.x}" y="${mb.y}" width="${Math.round(mb.w * 0.52)}" height="${mb.h}" rx="${rx}" fill="${bgC2}" opacity="0.24"/>
       <text x="${mb.x + Math.round(mb.w * 0.31)}" y="${mb.y + Math.round(mb.h * 0.72)}" font-family="'${config.fontFamily}', sans-serif" font-weight="900" font-size="104" fill="#FFFFFF" opacity="0.92" text-anchor="middle">${initChar}</text>
-      <circle cx="${mb.x + Math.round(mb.w * 0.68)}" cy="${mb.y + Math.round(mb.h * 0.52)}" r="44" fill="${c1}" stroke="${c2}" stroke-width="4"/>
-      ${renderIcon(mb.x + Math.round(mb.w * 0.68) - 34, mb.y + Math.round(mb.h * 0.52) - 34, 68, '#FFFFFF')}
+      <circle cx="${mb.x + Math.round(mb.w * 0.68)}" cy="${mb.y + Math.round(mb.h * 0.52)}" r="44" fill="${bgC1}" stroke="${bgC2}" stroke-width="4"/>
       <circle cx="${mb.x + Math.round(mb.w * 0.86)}" cy="${mb.y + Math.round(mb.h * 0.22)}" r="8" fill="${c3}"/>
-    `;
+    `);
+    const monoIconColor =
+      config.emblemIconColor ||
+      (showBg ? '#FFFFFF' : ensureIconContrast(c1, config.surfaceBgHex || '#FFFFFF', c1));
+    const icX = showBg ? mb.x + Math.round(mb.w * 0.68) - 34 : 36;
+    const icY = showBg ? mb.y + Math.round(mb.h * 0.52) - 34 : 36;
+    const icSize = showBg ? 68 : 128;
+    const icPart = wrapIcon(
+      renderIcon(icX, icY, icSize, monoIconColor),
+      icX + icSize / 2,
+      icY + icSize / 2
+    );
+    return `${bgPart}${icPart}`;
   }
 
   let baseInner = '';
@@ -221,8 +367,20 @@ export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
       initChar,
       fontFamily: config.fontFamily,
       renderIcon,
+      showBg,
+      showIcon,
+      bgColor: config.emblemBgColor,
+      bgAccentColor: config.emblemBgAccentColor,
+      iconColorOverride: config.emblemIconColor,
+      bgScale,
+      bgOffsetX: bgOx,
+      bgOffsetY: bgOy,
+      iconScale: iconScaleVal,
+      iconOffsetX: iconOx,
+      iconOffsetY: iconOy,
+      surfaceBgHex: config.surfaceBgHex,
     });
-  } else {
+  } else if (!hasLayerOverrides) {
     switch (config.containerStyle) {
       case 'cutoutCorner':
         baseInner = `
@@ -338,19 +496,163 @@ export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
       `;
         break;
     }
+  } else {
+    // Legacy containers with separated fundal & icon layers
+    let bgMarkup = '';
+    let icRect = { x: 46, y: 46, size: 108, defaultColor: '#FFFFFF' };
+
+    switch (config.containerStyle) {
+      case 'cutoutCorner':
+        bgMarkup = `
+          <rect x="20" y="24" width="146" height="150" rx="38" fill="${bgC1}"/>
+          <path d="M20 64 C20 42 38 24 60 24 H124 C146 24 166 42 166 64 V92 H20 Z" fill="${bgC2}" opacity="0.25"/>
+          <circle cx="150" cy="50" r="34" fill="#FFFFFF"/>
+          <circle cx="150" cy="50" r="24" fill="${bgC2}"/>
+          <circle cx="150" cy="50" r="8" fill="#FFFFFF"/>
+        `;
+        icRect = { x: 44, y: 62, size: 86, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'monogramSeal':
+        bgMarkup = `
+          <rect x="18" y="22" width="164" height="156" rx="40" fill="${bgC1}"/>
+          <path d="M104 22 H142 C164 22 182 40 182 62 V138 C182 160 164 178 142 178 H104 Z" fill="${bgC2}"/>
+          <text x="60" y="132" font-family="'${config.fontFamily}', sans-serif" font-weight="800" font-size="88" fill="#FFFFFF" text-anchor="middle">${initChar}</text>
+          <circle cx="104" cy="50" r="8" fill="${c3}"/>
+        `;
+        icRect = { x: 114, y: 68, size: 60, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'isoHexCube':
+        bgMarkup = `
+          <polygon points="100,12 178,56 178,144 100,188 22,144 22,56" fill="${bgC1}"/>
+          <polygon points="100,12 178,56 100,100 22,56" fill="${bgC2}"/>
+          <polygon points="100,100 178,56 178,144 100,188" fill="${bgC2}" opacity="0.38"/>
+          <circle cx="100" cy="104" r="54" fill="${bgC1}" stroke="#FFFFFF" stroke-width="5"/>
+          <circle cx="100" cy="36" r="7" fill="${c3}"/>
+        `;
+        icRect = { x: 62, y: 66, size: 76, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'bauhausGrid':
+        bgMarkup = `
+          <rect x="20" y="20" width="76" height="76" rx="20" fill="${bgC2}"/>
+          <path d="M104 20 H140 C162 20 180 38 180 60 V96 H104 Z" fill="${c3}"/>
+          <rect x="20" y="104" width="160" height="76" rx="24" fill="${bgC1}"/>
+          <circle cx="58" cy="58" r="16" fill="#FFFFFF"/>
+        `;
+        icRect = { x: 64, y: 106, size: 72, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'offsetNeo':
+        bgMarkup = `
+          <rect x="34" y="34" width="146" height="146" rx="36" fill="${bgC2}"/>
+          <rect x="20" y="20" width="146" height="146" rx="36" fill="${bgC1}" stroke="#FFFFFF" stroke-width="5"/>
+          <circle cx="138" cy="48" r="10" fill="${c3}"/>
+        `;
+        icRect = { x: 47, y: 47, size: 92, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'swissSeal':
+        bgMarkup = `
+          <circle cx="100" cy="100" r="84" fill="none" stroke="${bgC1}" stroke-width="6"/>
+          <path d="M100 16 A84 84 0 0 1 184 100" fill="none" stroke="${bgC2}" stroke-width="12" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="64" fill="${bgC1}"/>
+          <circle cx="164" cy="42" r="11" fill="${c3}" stroke="#FFFFFF" stroke-width="4"/>
+        `;
+        icRect = { x: 58, y: 58, size: 84, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'slashCapsule':
+        bgMarkup = `
+          <rect x="22" y="22" width="156" height="156" rx="44" fill="${bgC1}"/>
+          <path d="M22 66 C22 42 42 22 66 22 H134 C158 22 178 42 178 66 V76 L22 124 Z" fill="${bgC2}"/>
+          <circle cx="148" cy="148" r="10" fill="${c3}"/>
+        `;
+        icRect = { x: 54, y: 54, size: 92, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'shieldCrest':
+        bgMarkup = `
+          <path d="M100 14 L172 42 V102 C172 148 140 176 100 188 C60 176 28 148 28 102 V42 L100 14 Z" fill="${bgC1}"/>
+          <path d="M100 26 L158 49 V100 C158 138 132 160 100 172 V26 Z" fill="${bgC2}" opacity="0.82"/>
+          <circle cx="100" cy="44" r="8" fill="${c3}"/>
+        `;
+        icRect = { x: 56, y: 58, size: 88, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'vennPortal':
+        bgMarkup = `
+          <circle cx="78" cy="104" r="62" fill="${bgC2}" opacity="0.88"/>
+          <circle cx="114" cy="96" r="64" fill="${bgC1}"/>
+          <circle cx="52" cy="54" r="12" fill="${c3}"/>
+        `;
+        icRect = { x: 72, y: 54, size: 84, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'squircle':
+        bgMarkup = `
+          <rect x="20" y="20" width="160" height="160" rx="48" fill="${bgC1}"/>
+          <rect x="25" y="25" width="150" height="150" rx="44" fill="none" stroke="${bgC2}" stroke-width="4" opacity="0.6"/>
+          <circle cx="152" cy="48" r="8" fill="${c3}"/>
+        `;
+        icRect = { x: 46, y: 46, size: 108, defaultColor: '#FFFFFF' };
+        break;
+
+      case 'pureIcon':
+        bgMarkup = `<circle cx="100" cy="100" r="88" fill="${bgC2}" opacity="0.08"/>`;
+        icRect = { x: 25, y: 25, size: 150, defaultColor: c1 };
+        break;
+
+      case 'minimalistSpark':
+      default:
+        bgMarkup = `
+          <rect x="26" y="26" width="148" height="148" rx="38" fill="${bgC2}" opacity="0.12"/>
+          <circle cx="156" cy="44" r="16" fill="${c3}"/>
+          <circle cx="44" cy="156" r="10" fill="${bgC2}"/>
+        `;
+        icRect = { x: 34, y: 34, size: 132, defaultColor: c1 };
+        break;
+    }
+
+    const effSize = showBg ? icRect.size : Math.min(148, Math.max(icRect.size, 128));
+    const effX = showBg ? icRect.x : Math.round(100 - effSize / 2);
+    const effY = showBg ? icRect.y : Math.round(100 - effSize / 2);
+    const resolvedIconColor =
+      config.emblemIconColor ||
+      (showBg
+        ? ensureIconContrast(
+            icRect.defaultColor === '#FFFFFF' ? '#FFFFFF' : bgC1,
+            bgC1,
+            bgC1
+          )
+        : ensureIconContrast(c1, config.surfaceBgHex || '#FFFFFF', c1));
+
+    const wrappedBg = wrapBg(bgMarkup);
+    const wrappedIcon = wrapIcon(
+      renderIcon(effX, effY, effSize, resolvedIconColor),
+      effX + effSize / 2,
+      effY + effSize / 2
+    );
+    baseInner = `${wrappedBg}${wrappedIcon}`;
   }
 
   // Compound Emblem Fusion Mode 3: Dual-Icon Interlock Badge
   if (fusion === 'dual-badge') {
     const secIcon = config.secondaryIcon || 'Sparkles';
+    const badgeBg = wrapBg(
+      `<rect x="116" y="116" width="68" height="68" rx="22" fill="${bgC2}" stroke="#FFFFFF" stroke-width="5"/><circle cx="176" cy="122" r="7" fill="${c3}"/>`
+    );
+    const badgeIc = showIcon
+      ? renderSpecificIcon(secIcon, 130, 130, 40, config.emblemIconColor || '#FFFFFF', false)
+      : '';
     return `
       <g transform="translate(-4, -4) scale(0.94)">
         ${baseInner}
       </g>
       <g id="logostudio-secondary-badge">
-        <rect x="116" y="116" width="68" height="68" rx="22" fill="${c2}" stroke="#FFFFFF" stroke-width="5"/>
-        ${renderSpecificIcon(secIcon, 130, 130, 40, '#FFFFFF', false)}
-        <circle cx="176" cy="122" r="7" fill="${c3}"/>
+        ${badgeBg}
+        ${badgeIc}
       </g>
     `;
   }
@@ -358,9 +660,22 @@ export function buildEmblemInnerMarkup(config: EmblemMarkupConfig): string {
   return baseInner;
 }
 
-export function buildEmblemSvgMarkup(config: EmblemMarkupConfig, size = 200): string {
+export function buildEmblemSvgMarkup(
+  config: EmblemMarkupConfig,
+  size = 200,
+  opts?: { bleed?: number | 'auto' }
+): string {
   const inner = buildEmblemInnerMarkup(config);
-  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="${size}" height="${size}">${inner}</svg>`;
+  const bleed =
+    opts?.bleed === undefined || opts.bleed === 'auto'
+      ? computeEmblemBleed(config)
+      : Math.max(0, opts.bleed);
+  if (bleed === 0) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="${size}" height="${size}">${inner}</svg>`;
+  }
+  const vbSpan = 200 + bleed * 2;
+  const pxSize = Math.round((size * vbSpan) / 200);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-bleed} ${-bleed} ${vbSpan} ${vbSpan}" width="${pxSize}" height="${pxSize}">${inner}</svg>`;
 }
 
 export function getTypographicWeights(style: TypoContrastStyle) {
@@ -513,29 +828,22 @@ export function generateFullLogoSvg(
     ? (state as LogoState).motionPreset || 'none'
     : 'none';
 
-  let emblemSvgInner = buildEmblemInnerMarkup({
-    containerStyle: state.containerStyle,
-    construction: state.construction,
-    activeIcon: state.activeIcon,
-    secondaryIcon,
-    emblemFusion,
-    customSvgPath: (state as LogoState).customSvgPath || (state as LogoVariant).customSvgPath,
-    primary: state.primary,
-    secondary: state.secondary,
-    accent: state.accent,
-    fontFamily: layout.fontFamily,
-    word1: state.word1,
-    iconStrokeWidth: (state as LogoState).iconStrokeWidth || 2.2,
-    iconRotation: (state as LogoState).iconRotation || 0,
-    iconFlipH: (state as LogoState).iconFlipH || false,
-    iconFlipV: (state as LogoState).iconFlipV || false,
-  });
+  let emblemMarkup = '';
+  if (layout.emblem.show) {
+    let emblemSvgInner = buildEmblemInnerMarkup(
+      emblemConfigFromState(state, {
+        secondaryIcon,
+        emblemFusion,
+        fontFamily: layout.fontFamily,
+        surfaceBgHex: bgFill === 'none' ? '#FFFFFF' : bgFill,
+      })
+    );
 
-  if (motionPreset === 'draw-stroke') {
-    emblemSvgInner = injectPathLengthOnStrokes(emblemSvgInner);
-  }
+    if (motionPreset === 'draw-stroke') {
+      emblemSvgInner = injectPathLengthOnStrokes(emblemSvgInner);
+    }
 
-  const emblemMarkup = `
+    emblemMarkup = `
     <g id="logostudio-emblem" transform="translate(${layout.emblem.x}, ${layout.emblem.y})">
       <g transform="scale(${layout.emblem.size / 200})">
         <g id="logostudio-emblem-inner">
@@ -544,6 +852,7 @@ export function generateFullLogoSvg(
       </g>
     </g>
   `;
+  }
 
   // Mask for 45° stencil cut if active
   const maskHash = hashDomain(`${state.domain || state.word1}-${width}x${height}`).toString(36);

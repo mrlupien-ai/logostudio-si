@@ -19,7 +19,11 @@ import {
 import { LogoState } from '../../types/logo';
 import { evaluateDomainBrandability } from '../../utils/siBrandIntelligence';
 import { getClosestPantone, getWcagContrast, hexToRgb, rgbToCmyk } from '../../utils/color';
-import { generateFullLogoSvg, buildEmblemSvgMarkup } from '../../utils/svgBuilder';
+import {
+  generateFullLogoSvg,
+  buildEmblemSvgMarkup,
+  emblemConfigFromState,
+} from '../../utils/svgBuilder';
 import {
   downloadBlob,
   downloadFaviconSuiteZip,
@@ -83,27 +87,7 @@ export const SiBrandBookStage: React.FC<SiBrandBookStageProps> = ({ state, onCha
     [state]
   );
   const emblemSvg = useMemo(
-    () =>
-      buildEmblemSvgMarkup(
-        {
-          containerStyle: state.containerStyle,
-          construction: state.construction,
-          activeIcon: state.activeIcon,
-          secondaryIcon: state.secondaryIcon,
-          emblemFusion: state.emblemFusion,
-          customSvgPath: state.customSvgPath,
-          primary: state.primary,
-          secondary: state.secondary,
-          accent: state.accent,
-          fontFamily: state.fontFamily,
-          word1: state.word1,
-          iconStrokeWidth: state.iconStrokeWidth,
-          iconRotation: state.iconRotation,
-          iconFlipH: state.iconFlipH,
-          iconFlipV: state.iconFlipV,
-        },
-        200
-      ),
+    () => buildEmblemSvgMarkup(emblemConfigFromState(state), 200),
     [state]
   );
 

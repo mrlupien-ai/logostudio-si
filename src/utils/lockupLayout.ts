@@ -226,18 +226,54 @@ export function computeLockupLayout(
   const targetW = maxTargetW;
   const targetH = useHorizontal ? Math.min(maxTargetH, H * 0.60) : maxTargetH;
 
+  const hasEmblem =
+    cfg.mainLayout !== 'wordmark-only' &&
+    (cfg.showEmblemBg !== false || cfg.showEmblemIcon !== false);
+
+  // Normalized outer overhang fractions (relative to emblemSize) when user scales/offsets fundal or icon beyond [0..200]
+  const showBg = cfg.showEmblemBg !== false;
+  const showIc = cfg.showEmblemIcon !== false;
+  const bgScale = Number.isFinite(cfg.emblemBgScale) ? Math.max(0.4, Math.min(1.6, cfg.emblemBgScale!)) : 1;
+  const bgOx = Number.isFinite(cfg.emblemBgOffsetX) ? Math.max(-50, Math.min(50, cfg.emblemBgOffsetX!)) : 0;
+  const bgOy = Number.isFinite(cfg.emblemBgOffsetY) ? Math.max(-50, Math.min(50, cfg.emblemBgOffsetY!)) : 0;
+  const icScale = Number.isFinite(cfg.emblemIconScale) ? Math.max(0.35, Math.min(1.75, cfg.emblemIconScale!)) : 1;
+  const icOx = Number.isFinite(cfg.emblemIconOffsetX) ? Math.max(-50, Math.min(50, cfg.emblemIconOffsetX!)) : 0;
+  const icOy = Number.isFinite(cfg.emblemIconOffsetY) ? Math.max(-50, Math.min(50, cfg.emblemIconOffsetY!)) : 0;
+
+  let emMinX = 200;
+  let emMaxX = 0;
+  let emMinY = 200;
+  let emMaxY = 0;
+  if (showBg) {
+    emMinX = Math.min(emMinX, 100 + bgOx - 92 * bgScale);
+    emMaxX = Math.max(emMaxX, 100 + bgOx + 92 * bgScale);
+    emMinY = Math.min(emMinY, 100 + bgOy - 92 * bgScale);
+    emMaxY = Math.max(emMaxY, 100 + bgOy + 92 * bgScale);
+  }
+  if (showIc) {
+    const icHalf = showBg ? 64 * icScale : 74 * icScale;
+    emMinX = Math.min(emMinX, 100 + icOx - icHalf);
+    emMaxX = Math.max(emMaxX, 100 + icOx + icHalf);
+    emMinY = Math.min(emMinY, 100 + icOy - icHalf);
+    emMaxY = Math.max(emMaxY, 100 + icOy + icHalf);
+  }
+  const ohLeftF = hasEmblem ? Math.max(0, -emMinX / 200) : 0;
+  const ohRightF = hasEmblem ? Math.max(0, (emMaxX - 200) / 200) : 0;
+  const ohTopF = hasEmblem ? Math.max(0, -emMinY / 200) : 0;
+  const ohBotF = hasEmblem ? Math.max(0, (emMaxY - 200) / 200) : 0;
+
   let refFontSize: number;
   let refIconSize: number;
   let refGap: number;
 
   if (useHorizontal) {
     refFontSize = 100;
-    refIconSize = 155 * iScale;
-    refGap = (((cfg as LogoState).gap ?? 26) / 26) * 32;
+    refIconSize = hasEmblem ? 155 * iScale : 0;
+    refGap = hasEmblem ? (((cfg as LogoState).gap ?? 26) / 26) * 32 : 0;
   } else {
     refFontSize = isSquare ? 86 : 74;
-    refIconSize = (isSquare ? 230 : 160) * iScale;
-    refGap = (((cfg as LogoState).gap ?? 26) / 26) * (isSquare ? 26 : 22);
+    refIconSize = hasEmblem ? (isSquare ? 230 : 160) * iScale : 0;
+    refGap = hasEmblem ? (((cfg as LogoState).gap ?? 26) / 26) * (isSquare ? 26 : 22) : 0;
   }
 
   const getWordTrackPx = (fontSize: number) => {
@@ -423,14 +459,22 @@ export function computeLockupLayout(
     let rawBboxW = 0;
     let rawBboxH = 0;
 
-    if (useHorizontal) {
+    if (!hasEmblem) {
       const textBlockW = Math.max(wordsTotalW, tagW);
-      rawBboxW = iconSize + gapSize + textBlockW;
-      rawBboxH = Math.max(iconSize, ascent + descent + (showTagline ? tagH : 0));
+      rawBboxW = textBlockW;
+      rawBboxH = ascent + descent + (showTagline ? tagH : 0);
+    } else if (useHorizontal) {
+      const textBlockW = Math.max(wordsTotalW, tagW);
+      rawBboxW = iconSize * (1 + ohLeftF + ohRightF) + gapSize + textBlockW;
+      rawBboxH = Math.max(
+        iconSize * (1 + ohTopF + ohBotF),
+        ascent + descent + (showTagline ? tagH : 0)
+      );
     } else {
       const textBlockW = Math.max(wordsTotalW, tagW);
-      rawBboxW = Math.max(iconSize, textBlockW);
-      rawBboxH = iconSize + gapSize + ascent + descent + (showTagline ? tagH : 0);
+      rawBboxW = Math.max(iconSize * (1 + ohLeftF + ohRightF), textBlockW);
+      rawBboxH =
+        iconSize * (1 + ohTopF + ohBotF) + gapSize + ascent + descent + (showTagline ? tagH : 0);
     }
 
     return {
@@ -476,8 +520,8 @@ export function computeLockupLayout(
   const initialFitScale = Math.min(targetW / refM.rawBboxW, targetH / refM.rawBboxH);
 
   let baseFontSize = Math.round(refFontSize * initialFitScale);
-  let emblemSize = Math.round(refIconSize * initialFitScale);
-  let gap = Math.round(refGap * initialFitScale);
+  let emblemSize = hasEmblem ? Math.round(refIconSize * initialFitScale) : 0;
+  let gap = hasEmblem ? Math.round(refGap * initialFitScale) : 0;
 
   // Step 2: Measure at computed size
   let m = measureAtScale(baseFontSize, emblemSize, gap);
@@ -489,8 +533,8 @@ export function computeLockupLayout(
   if (m.rawBboxW > maxAllowedW || m.rawBboxH > maxAllowedH) {
     const shrink = Math.min(maxAllowedW / m.rawBboxW, maxAllowedH / m.rawBboxH);
     baseFontSize = Math.max(12, Math.floor(baseFontSize * shrink));
-    emblemSize = Math.max(16, Math.floor(emblemSize * shrink));
-    gap = Math.max(4, Math.floor(gap * shrink));
+    emblemSize = hasEmblem ? Math.max(16, Math.floor(emblemSize * shrink)) : 0;
+    gap = hasEmblem ? Math.max(4, Math.floor(gap * shrink)) : 0;
     isClamped = true;
     m = measureAtScale(baseFontSize, emblemSize, gap);
   }
@@ -499,8 +543,8 @@ export function computeLockupLayout(
   if (m.rawBboxW > cropZone.w || m.rawBboxH > cropZone.h) {
     const finalShrink = Math.min(cropZone.w / m.rawBboxW, cropZone.h / m.rawBboxH) * 0.99;
     baseFontSize = Math.max(12, Math.floor(baseFontSize * finalShrink));
-    emblemSize = Math.max(16, Math.floor(emblemSize * finalShrink));
-    gap = Math.max(4, Math.floor(gap * finalShrink));
+    emblemSize = hasEmblem ? Math.max(16, Math.floor(emblemSize * finalShrink)) : 0;
+    gap = hasEmblem ? Math.max(4, Math.floor(gap * finalShrink)) : 0;
     isClamped = true;
     m = measureAtScale(baseFontSize, emblemSize, gap);
   }
@@ -516,41 +560,64 @@ export function computeLockupLayout(
   let minInkY = 0;
   let maxInkY = 0;
 
-  if (useHorizontal) {
+  const ohLeftPx = emblemSize * ohLeftF;
+  const ohRightPx = emblemSize * ohRightF;
+  const ohTopPx = emblemSize * ohTopF;
+  const ohBotPx = emblemSize * ohBotF;
+
+  if (!hasEmblem) {
     const textBlockW = Math.max(m.wordsTotalW, m.tagW);
-    const totalW = emblemSize + gap + textBlockW;
+    const totalTextH = m.ascent + m.descent + (m.showTagline ? m.tagH : 0);
+
+    wordmarkStartX = (W - m.wordsTotalW) / 2;
+    baselineY = (H - totalTextH) / 2 + m.ascent;
+
+    minInkX = Math.min(wordmarkStartX, (W - textBlockW) / 2);
+    maxInkX = Math.max(wordmarkStartX + m.wordsTotalW, (W + textBlockW) / 2);
+
+    minInkY = baselineY - m.ascent;
+    maxInkY =
+      baselineY + m.descent + (m.showTagline ? m.tagFontSize * 1.6 + m.tagDescent : 0);
+  } else if (useHorizontal) {
+    const textBlockW = Math.max(m.wordsTotalW, m.tagW);
+    const totalW = ohLeftPx + emblemSize + ohRightPx + gap + textBlockW;
 
     const startX = (W - totalW) / 2;
     const centerY = H / 2;
 
-    emblemX = startX;
+    emblemX = startX + ohLeftPx;
     emblemY = centerY - emblemSize / 2;
 
-    wordmarkStartX = startX + emblemSize + gap;
+    wordmarkStartX = startX + ohLeftPx + emblemSize + ohRightPx + gap;
     baselineY = centerY + m.ascent / 2 - m.descent * 0.12;
 
     minInkX = startX;
     maxInkX = startX + totalW;
 
-    minInkY = Math.min(emblemY, baselineY - m.ascent);
+    minInkY = Math.min(emblemY - ohTopPx, baselineY - m.ascent);
     maxInkY = Math.max(
-      emblemY + emblemSize,
+      emblemY + emblemSize + ohBotPx,
       baselineY + m.descent + (m.showTagline ? m.tagFontSize * 1.6 + m.tagDescent : 0)
     );
   } else {
-    const totalH = emblemSize + gap + m.ascent + m.descent + (m.showTagline ? m.tagH : 0);
+    const totalH =
+      ohTopPx + emblemSize + ohBotPx + gap + m.ascent + m.descent + (m.showTagline ? m.tagH : 0);
 
     const startY = (H - totalH) / 2;
     emblemX = (W - emblemSize) / 2;
-    emblemY = startY;
+    emblemY = startY + ohTopPx;
 
     wordmarkStartX = (W - m.wordsTotalW) / 2;
-    baselineY = startY + emblemSize + gap + m.ascent;
+    baselineY = startY + ohTopPx + emblemSize + ohBotPx + gap + m.ascent;
 
-    minInkX = Math.min(emblemX, wordmarkStartX, (W - m.tagW) / 2);
-    maxInkX = Math.max(emblemX + emblemSize, wordmarkStartX + m.wordsTotalW, (W + m.tagW) / 2);
+    minInkX = Math.min(emblemX - ohLeftPx, wordmarkStartX, (W - m.tagW) / 2);
+    maxInkX = Math.max(
+      emblemX + emblemSize + ohRightPx,
+      wordmarkStartX + m.wordsTotalW,
+      (W + m.tagW) / 2
+    );
 
-    minInkY = emblemY;
+    minInkY = emblemY - ohTopPx;
     maxInkY = baselineY + m.descent + (m.showTagline ? m.tagFontSize * 1.6 + m.tagDescent : 0);
   }
 
@@ -859,9 +926,9 @@ export function computeLockupLayout(
     isSquare,
     useHorizontal,
     emblem: {
-      show: true,
-      x: emblemX,
-      y: emblemY,
+      show: hasEmblem,
+      x: hasEmblem ? emblemX : 0,
+      y: hasEmblem ? emblemY : 0,
       size: emblemSize,
     },
     w1,

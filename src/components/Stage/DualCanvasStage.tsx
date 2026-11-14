@@ -27,6 +27,7 @@ import { drawLogoOnCanvas, loadSvgToImage } from '../../utils/canvasRenderer';
 import {
   buildEmblemSvgMarkup,
   buildEmblemInnerMarkup,
+  emblemConfigFromState,
   formatWordText,
   getTypographicWeights,
   generateFullLogoSvg,
@@ -132,122 +133,39 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
 
   // Live 60fps SVG markups for Web Header, App Icons, and Marketplace Cards
   const liveEmblemInner = React.useMemo(
-    () =>
-      buildEmblemInnerMarkup({
-        containerStyle: state.containerStyle,
-        construction: state.construction,
-        activeIcon: state.activeIcon,
-        secondaryIcon: state.secondaryIcon,
-        emblemFusion: state.emblemFusion,
-        customSvgPath: state.customSvgPath,
-        primary: state.primary,
-        secondary: state.secondary,
-        accent: state.accent,
-        fontFamily: state.fontFamily,
-        word1: state.word1,
-        iconStrokeWidth: state.iconStrokeWidth,
-        iconRotation: state.iconRotation,
-        iconFlipH: state.iconFlipH,
-        iconFlipV: state.iconFlipV,
-      }),
-    [
-      state.containerStyle,
-      state.construction,
-      state.activeIcon,
-      state.secondaryIcon,
-      state.emblemFusion,
-      state.customSvgPath,
-      state.primary,
-      state.secondary,
-      state.accent,
-      state.fontFamily,
-      state.word1,
-      state.iconStrokeWidth,
-      state.iconRotation,
-      state.iconFlipH,
-      state.iconFlipV,
-    ]
+    () => buildEmblemInnerMarkup(emblemConfigFromState(state)),
+    [state]
   );
 
   // Dark-surface contrast-safe emblem markup (Defect 13 fix)
   const liveEmblemDarkSafeInner = React.useMemo(() => {
     const isLowContrastOnDark = wcagContrastRatio(state.primary, '#080D1A') < 2.2;
     const safePrimary = isLowContrastOnDark ? '#1E293B' : state.primary;
-    return buildEmblemInnerMarkup({
-      containerStyle: state.containerStyle,
-      construction: state.construction,
-      activeIcon: state.activeIcon,
-      secondaryIcon: state.secondaryIcon,
-      emblemFusion: state.emblemFusion,
-      customSvgPath: state.customSvgPath,
-      primary: safePrimary,
-      secondary: state.secondary,
-      accent: state.accent,
-      fontFamily: state.fontFamily,
-      word1: state.word1,
-      iconStrokeWidth: state.iconStrokeWidth,
-      iconRotation: state.iconRotation,
-      iconFlipH: state.iconFlipH,
-      iconFlipV: state.iconFlipV,
-    });
-  }, [
-    state.containerStyle,
-    state.construction,
-    state.activeIcon,
-    state.secondaryIcon,
-    state.emblemFusion,
-    state.customSvgPath,
-    state.primary,
-    state.secondary,
-    state.accent,
-    state.fontFamily,
-    state.word1,
-    state.iconStrokeWidth,
-    state.iconRotation,
-    state.iconFlipH,
-    state.iconFlipV,
-  ]);
+    const safeBgColor =
+      state.emblemBgColor && wcagContrastRatio(state.emblemBgColor, '#080D1A') < 2.2
+        ? '#1E293B'
+        : state.emblemBgColor;
+    return buildEmblemInnerMarkup(
+      emblemConfigFromState(state, {
+        primary: safePrimary,
+        emblemBgColor: safeBgColor,
+        surfaceBgHex: '#080D1A',
+      })
+    );
+  }, [state]);
 
   // Mark-only emblem for App Icon squircle previews (Defect 14 fix: no container-inside-a-container)
   const liveAppMarkOnWhiteInner = React.useMemo(() => {
     const markColor =
       wcagContrastRatio(state.primary, '#FFFFFF') >= 2.5 ? state.primary : '#0F172A';
-    return buildEmblemInnerMarkup({
-      containerStyle: state.containerStyle,
-      construction: state.construction,
-      activeIcon: state.activeIcon,
-      secondaryIcon: state.secondaryIcon,
-      emblemFusion: state.emblemFusion,
-      customSvgPath: state.customSvgPath,
-      primary: state.primary,
-      secondary: state.secondary,
-      accent: state.accent,
-      fontFamily: state.fontFamily,
-      word1: state.word1,
-      iconStrokeWidth: state.iconStrokeWidth,
-      iconRotation: state.iconRotation,
-      iconFlipH: state.iconFlipH,
-      iconFlipV: state.iconFlipV,
-      markOnly: true,
-      markColor,
-    });
-  }, [
-    state.containerStyle,
-    state.construction,
-    state.activeIcon,
-    state.secondaryIcon,
-    state.emblemFusion,
-    state.customSvgPath,
-    state.primary,
-    state.secondary,
-    state.accent,
-    state.fontFamily,
-    state.word1,
-    state.iconStrokeWidth,
-    state.iconRotation,
-    state.iconFlipH,
-    state.iconFlipV,
-  ]);
+    return buildEmblemInnerMarkup(
+      emblemConfigFromState(state, {
+        markOnly: state.showEmblemIcon !== false,
+        markColor,
+        surfaceBgHex: '#FFFFFF',
+      })
+    );
+  }, [state]);
 
   const liveMainCardSvg = React.useMemo(
     () => generateFullLogoSvg(state, { width: 750, height: 450, background: 'white' }),
@@ -280,29 +198,29 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
       if (isCancelled) return;
 
       const isDarkSurface = state.bgMode === 'dark';
+      const surfaceBgHex =
+        state.bgMode === 'dark'
+          ? '#070B14'
+          : state.bgMode === 'brand'
+          ? '#EEF2FF'
+          : '#FFFFFF';
       const emblemPrimary =
         isDarkSurface && wcagContrastRatio(state.primary, '#070B14') < 2.1
           ? '#1E293B'
           : state.primary;
+      const safeEmblemBgColor =
+        isDarkSurface &&
+        state.emblemBgColor &&
+        wcagContrastRatio(state.emblemBgColor, '#070B14') < 2.1
+          ? '#1E293B'
+          : state.emblemBgColor;
 
       const emblemSvg = buildEmblemSvgMarkup(
-        {
-          containerStyle: state.containerStyle,
-          construction: state.construction,
-          activeIcon: state.activeIcon,
-          secondaryIcon: state.secondaryIcon,
-          emblemFusion: state.emblemFusion,
-          customSvgPath: state.customSvgPath,
+        emblemConfigFromState(state, {
           primary: emblemPrimary,
-          secondary: state.secondary,
-          accent: state.accent,
-          fontFamily: state.fontFamily,
-          word1: state.word1,
-          iconStrokeWidth: state.iconStrokeWidth,
-          iconRotation: state.iconRotation,
-          iconFlipH: state.iconFlipH,
-          iconFlipV: state.iconFlipV,
-        },
+          emblemBgColor: safeEmblemBgColor,
+          surfaceBgHex,
+        }),
         600
       );
 
@@ -416,17 +334,23 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
     const extClean = state.ext.startsWith('.') ? state.ext : `.${state.ext}`;
     const extUpper = extClean.replace(/^\./, '').toUpperCase();
 
+    const showAnyEmblem =
+      state.mainLayout !== 'wordmark-only' &&
+      (state.showEmblemBg !== false || state.showEmblemIcon !== false);
+
     return (
       <div
         className="inline-flex items-center gap-2.5 select-none shrink-0"
         style={{ height: `${heightPx}px` }}
       >
-        <svg
-          viewBox="0 0 200 200"
-          style={{ width: `${heightPx}px`, height: `${heightPx}px` }}
-          className="shrink-0 overflow-visible"
-          dangerouslySetInnerHTML={{ __html: emblemHtml }}
-        />
+        {showAnyEmblem && (
+          <svg
+            viewBox="0 0 200 200"
+            style={{ width: `${heightPx}px`, height: `${heightPx}px` }}
+            className="shrink-0 overflow-visible"
+            dangerouslySetInnerHTML={{ __html: emblemHtml }}
+          />
+        )}
         <div className="flex flex-col justify-center leading-none">
           <div
             className="flex items-baseline whitespace-nowrap"
@@ -1372,7 +1296,7 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
                           <div className="flex items-center gap-3 pt-1">
                             <svg
                               viewBox="0 0 200 200"
-                              className="w-10 h-10 shrink-0"
+                              className="w-10 h-10 shrink-0 overflow-visible"
                               dangerouslySetInnerHTML={{
                                 __html:
                                   webTheme === 'dark' ? liveEmblemDarkSafeInner : liveEmblemInner,
@@ -1878,7 +1802,7 @@ export const DualCanvasStage: React.FC<DualCanvasStageProps> = ({
                           <div className="w-12 h-12 rounded-xl bg-white p-1.5 shadow flex items-center justify-center shrink-0">
                             <svg
                               viewBox="0 0 200 200"
-                              className="w-full h-full"
+                              className="w-full h-full overflow-visible"
                               dangerouslySetInnerHTML={{ __html: liveEmblemInner }}
                             />
                           </div>

@@ -7,7 +7,8 @@ import {
   validateConstructionSpec,
   describeConstruction,
 } from './constructionEngine';
-import { buildEmblemSvgMarkup, generateFullLogoSvg } from './svgBuilder';
+import { buildEmblemSvgMarkup, buildEmblemInnerMarkup, emblemConfigFromState, generateFullLogoSvg } from './svgBuilder';
+import { computeLockupLayout } from './lockupLayout';
 import { LogoState } from '../types/logo';
 
 const TEST_DOMAINS = [
@@ -254,5 +255,173 @@ describe('Per-Domain Emblem Construction Engine', () => {
     const ids0 = new Set(seed0.map((s) => s.id));
     const shared = seed1.filter((s) => ids0.has(s.id));
     expect(shared.length).toBeLessThanOrEqual(3);
+  });
+
+  it('7. Independent Fundal & Icon visibility: hiding either layer preserves the other cleanly and hiding both centers the wordmark inside the 80% safe crop', () => {
+    const spec = instantiateFamily('notchTab', 12345, 0);
+    const baseState: LogoState = {
+      domain: 'adstock.org',
+      brandName: 'Ad Stock',
+      word1: 'Ad',
+      word2: 'Stock',
+      ext: '.org',
+      keepExt: true,
+      extStyle: 'inline',
+      tagline: '',
+      showTagline: false,
+      taglineFont: 'Plus Jakarta Sans',
+      taglineTracking: 3.5,
+      typoContrast: 'bold-bold',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight1: '800',
+      fontWeight2: '700',
+      letterCase1: 'as-is',
+      letterCase2: 'as-is',
+      tracking: -1.5,
+      tracking1Em: -0.02,
+      tracking2Em: -0.01,
+      wordmarkAccent: 'none',
+      activeIcon: 'ChartSpline',
+      secondaryIcon: 'TrendingUp',
+      emblemFusion: 'single',
+      motionPreset: 'none',
+      containerStyle: 'cutoutCorner',
+      construction: spec,
+      iconStrokeWidth: 2.2,
+      iconRotation: 0,
+      iconFlipH: false,
+      iconFlipV: false,
+      emblemPadding: 24,
+      emblemCornerRadius: 38,
+      primary: '#0B132B',
+      secondary: '#00A878',
+      accent: '#F59E0B',
+      backgroundColor: '#FFFFFF',
+      bgMode: 'white',
+      mainLayout: 'horizontal',
+      masterScale: 1,
+      iconScale: 1,
+      gap: 26,
+      baselineOffset: 0,
+      nicheLabel: 'Finance',
+      icons10: ['ChartSpline'],
+      rasterMode: false,
+      rasterDataUrl: null,
+      variants10: [],
+      activeVariantIndex: 0,
+    };
+
+    // Hide background only -> icon stays visible with WCAG contrast against white (not #FFFFFF!)
+    const iconOnly = buildEmblemInnerMarkup(
+      emblemConfigFromState({ ...baseState, showEmblemBg: false, showEmblemIcon: true })
+    );
+    expect(iconOnly).toContain('<path');
+    expect(iconOnly).not.toContain('fill="#0B132B"');
+    expect(iconOnly).not.toContain('stroke="#FFFFFF"');
+
+    // Hide icon only -> background stays visible, no Lucide icon paths
+    const bgOnly = buildEmblemInnerMarkup(
+      emblemConfigFromState({ ...baseState, showEmblemBg: true, showEmblemIcon: false })
+    );
+    expect(bgOnly).toContain('#0B132B');
+    expect(bgOnly).not.toContain('M3 3v16');
+
+    // Hide both -> empty emblem markup and lockup layout omits emblem and centers wordmark
+    const hiddenBothState: LogoState = { ...baseState, showEmblemBg: false, showEmblemIcon: false };
+    expect(buildEmblemInnerMarkup(emblemConfigFromState(hiddenBothState))).toBe('');
+
+    const layout = computeLockupLayout(null, hiddenBothState, 750, 450, false);
+    expect(layout.emblem.show).toBe(false);
+    expect(layout.isCutByDefaultCrop).toBe(false);
+    const center = layout.boundingBox.x + layout.boundingBox.width / 2;
+    expect(Math.abs(center - 375)).toBeLessThan(2);
+  });
+
+  it('8. Independent colors, uniform scale (no distortion), and automatic viewBox bleed are deterministic', () => {
+    const spec = instantiateFamily('slashBand', 99991, 0);
+    const customState: LogoState = {
+      domain: 'adstock.org',
+      brandName: 'Ad Stock',
+      word1: 'Ad',
+      word2: 'Stock',
+      ext: '.org',
+      keepExt: true,
+      extStyle: 'inline',
+      tagline: '',
+      showTagline: false,
+      taglineFont: 'Plus Jakarta Sans',
+      taglineTracking: 3.5,
+      typoContrast: 'bold-bold',
+      fontFamily: 'Plus Jakarta Sans',
+      fontWeight1: '800',
+      fontWeight2: '700',
+      letterCase1: 'as-is',
+      letterCase2: 'as-is',
+      tracking: -1.5,
+      tracking1Em: -0.02,
+      tracking2Em: -0.01,
+      wordmarkAccent: 'none',
+      activeIcon: 'ChartSpline',
+      secondaryIcon: 'TrendingUp',
+      emblemFusion: 'single',
+      motionPreset: 'none',
+      containerStyle: 'cutoutCorner',
+      construction: spec,
+      iconStrokeWidth: 2.2,
+      iconRotation: 0,
+      iconFlipH: false,
+      iconFlipV: false,
+      showEmblemBg: true,
+      showEmblemIcon: true,
+      emblemBgColor: '#7C3AED',
+      emblemBgAccentColor: '#EC4899',
+      emblemIconColor: '#FEF08A',
+      emblemBgScale: 1.25,
+      emblemBgOffsetX: -18,
+      emblemBgOffsetY: 12,
+      emblemIconScale: 0.85,
+      emblemIconOffsetX: 10,
+      emblemIconOffsetY: -6,
+      emblemPadding: 24,
+      emblemCornerRadius: 38,
+      primary: '#0F172A',
+      secondary: '#059669',
+      accent: '#10B981',
+      backgroundColor: '#FFFFFF',
+      bgMode: 'white',
+      mainLayout: 'horizontal',
+      masterScale: 1,
+      iconScale: 1,
+      gap: 26,
+      baselineOffset: 0,
+      nicheLabel: 'Finance',
+      icons10: ['ChartSpline'],
+      rasterMode: false,
+      rasterDataUrl: null,
+      variants10: [],
+      activeVariantIndex: 0,
+    };
+
+    const svg1 = generateFullLogoSvg(customState, { width: 750, height: 450, background: 'white' });
+    const svg2 = generateFullLogoSvg(customState, { width: 750, height: 450, background: 'white' });
+    expect(svg1).toBe(svg2);
+
+    // Custom emblem colors applied independently while wordmark keeps primary/secondary
+    expect(svg1).toContain('#7C3AED');
+    expect(svg1).toContain('#FEF08A');
+    expect(svg1).toContain('fill="#0F172A"');
+    expect(svg1).toContain('fill="#059669"');
+
+    // Uniform scale transforms (single scalar scale(1.25) and scale(0.85))
+    expect(svg1).toContain('scale(1.25)');
+    expect(svg1).toContain('scale(0.85)');
+
+    // Standalone emblem SVG adds symmetric negative viewBox bleed so scaled/offset shapes never clip
+    const standalone = buildEmblemSvgMarkup(emblemConfigFromState(customState), 200);
+    expect(standalone).toMatch(/viewBox="-\d+ -\d+ \d+ \d+"/);
+
+    // Safe crop layout remains intact even with scaled/offset emblem
+    const layout = computeLockupLayout(null, customState, 750, 450, false);
+    expect(layout.isCutByDefaultCrop).toBe(false);
   });
 });

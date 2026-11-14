@@ -1,7 +1,7 @@
 import React from 'react';
 import { RefreshCw, Archive, Sparkles } from 'lucide-react';
 import { LogoState } from '../../types/logo';
-import { buildEmblemSvgMarkup } from '../../utils/svgBuilder';
+import { buildEmblemSvgMarkup, emblemConfigFromState } from '../../utils/svgBuilder';
 import { drawLogoOnCanvas, loadSvgToImage } from '../../utils/canvasRenderer';
 import { getExtendedSemanticIconsForDomain } from '../../data/domainSemanticIcons';
 import { downloadAll10VariantsZip } from '../../utils/exporter';
@@ -58,23 +58,6 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
       const canvas = canvasRefs.current[idx];
       if (!canvas) return;
 
-      const emblemSvg = buildEmblemSvgMarkup(
-        {
-          containerStyle: variant.containerStyle,
-          construction: variant.construction,
-          activeIcon: variant.activeIcon,
-          secondaryIcon: variant.secondaryIcon || state.secondaryIcon,
-          emblemFusion: variant.emblemFusion || state.emblemFusion,
-          customSvgPath: variant.customSvgPath || state.customSvgPath,
-          primary: variant.primary,
-          secondary: variant.secondary,
-          accent: variant.accent,
-          fontFamily: variant.fontFamily,
-          word1: variant.word1,
-        },
-        160
-      );
-
       const mergedVariant = {
         ...variant,
         word1: state.word1,
@@ -89,7 +72,27 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
         tracking1Em: variant.tracking1Em ?? state.tracking1Em,
         tracking2Em: variant.tracking2Em ?? state.tracking2Em,
         wordmarkAccent: variant.wordmarkAccent || state.wordmarkAccent,
+        secondaryIcon: variant.secondaryIcon || state.secondaryIcon,
+        emblemFusion: variant.emblemFusion || state.emblemFusion,
+        customSvgPath: variant.customSvgPath || state.customSvgPath,
+        iconStrokeWidth: state.iconStrokeWidth,
+        iconRotation: state.iconRotation,
+        iconFlipH: state.iconFlipH,
+        iconFlipV: state.iconFlipV,
+        showEmblemBg: state.showEmblemBg,
+        showEmblemIcon: state.showEmblemIcon,
+        emblemBgColor: state.emblemBgColor,
+        emblemBgAccentColor: state.emblemBgAccentColor,
+        emblemIconColor: state.emblemIconColor,
+        emblemBgScale: state.emblemBgScale,
+        emblemBgOffsetX: state.emblemBgOffsetX,
+        emblemBgOffsetY: state.emblemBgOffsetY,
+        emblemIconScale: state.emblemIconScale,
+        emblemIconOffsetX: state.emblemIconOffsetX,
+        emblemIconOffsetY: state.emblemIconOffsetY,
       };
+
+      const emblemSvg = buildEmblemSvgMarkup(emblemConfigFromState(mergedVariant), 160);
 
       loadSvgToImage(emblemSvg)
         .then((img) => {
@@ -116,6 +119,21 @@ export const Variants10Board: React.FC<Variants10BoardProps> = ({
     state.emblemFusion,
     state.secondaryIcon,
     state.customSvgPath,
+    state.iconStrokeWidth,
+    state.iconRotation,
+    state.iconFlipH,
+    state.iconFlipV,
+    state.showEmblemBg,
+    state.showEmblemIcon,
+    state.emblemBgColor,
+    state.emblemBgAccentColor,
+    state.emblemIconColor,
+    state.emblemBgScale,
+    state.emblemBgOffsetX,
+    state.emblemBgOffsetY,
+    state.emblemIconScale,
+    state.emblemIconOffsetX,
+    state.emblemIconOffsetY,
   ]);
 
   return (

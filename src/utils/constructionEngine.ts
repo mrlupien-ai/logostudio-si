@@ -592,9 +592,34 @@ export function renderConstruction(
     initChar: string;
     fontFamily: string;
     renderIcon: (x: number, y: number, size: number, color: string) => string;
+    showBg?: boolean;
+    showIcon?: boolean;
+    bgColor?: string;
+    bgAccentColor?: string;
+    iconColorOverride?: string;
+    bgScale?: number;
+    bgOffsetX?: number;
+    bgOffsetY?: number;
+    iconScale?: number;
+    iconOffsetX?: number;
+    iconOffsetY?: number;
+    surfaceBgHex?: string;
   }
 ): string {
-  const { c1, c2, c3, initChar, fontFamily, renderIcon } = ctx;
+  const { c1: origC1, c2: origC2, c3, initChar, fontFamily, renderIcon } = ctx;
+  const showBg = ctx.showBg !== false;
+  const showIcon = ctx.showIcon !== false;
+  const c1 = ctx.bgColor || origC1;
+  const c2 = ctx.bgAccentColor || origC2;
+  const bgScale = Number.isFinite(ctx.bgScale) ? Math.max(0.4, Math.min(1.6, ctx.bgScale!)) : 1;
+  const bgOx = Number.isFinite(ctx.bgOffsetX) ? Math.max(-50, Math.min(50, ctx.bgOffsetX!)) : 0;
+  const bgOy = Number.isFinite(ctx.bgOffsetY) ? Math.max(-50, Math.min(50, ctx.bgOffsetY!)) : 0;
+  const iconScaleVal = Number.isFinite(ctx.iconScale)
+    ? Math.max(0.35, Math.min(1.75, ctx.iconScale!))
+    : 1;
+  const iconOx = Number.isFinite(ctx.iconOffsetX) ? Math.max(-50, Math.min(50, ctx.iconOffsetX!)) : 0;
+  const iconOy = Number.isFinite(ctx.iconOffsetY) ? Math.max(-50, Math.min(50, ctx.iconOffsetY!)) : 0;
+
   const p = spec.params;
   const geom = computeConstructionGeometry(spec);
   const { mainBox, iconBox, accentBox } = geom;
@@ -607,10 +632,18 @@ export function renderConstruction(
   const accentShape = String(p.accentShape ?? 'dot');
   const fillMode = String(p.fillMode ?? 'solid');
 
-  const bgHex =
-    geom.bgBehindIcon === 'white' ? '#FFFFFF' : geom.bgBehindIcon === 'c2' ? c2 : c1;
-  const preferredIconHex = geom.preferredIconTone === 'c1' ? c1 : '#FFFFFF';
-  const iconColor = ensureIconContrast(preferredIconHex, bgHex, c1);
+  let iconColor: string;
+  if (ctx.iconColorOverride) {
+    iconColor = ctx.iconColorOverride;
+  } else if (!showBg) {
+    const surfaceBg = ctx.surfaceBgHex || '#FFFFFF';
+    iconColor = ensureIconContrast(origC1, surfaceBg, origC1);
+  } else {
+    const bgHex =
+      geom.bgBehindIcon === 'white' ? '#FFFFFF' : geom.bgBehindIcon === 'c2' ? c2 : c1;
+    const preferredIconHex = geom.preferredIconTone === 'c1' ? c1 : '#FFFFFF';
+    iconColor = ensureIconContrast(preferredIconHex, bgHex, c1);
+  }
 
   const isOutlineOrGhost = fillMode === 'outline' || fillMode === 'ghost';
   const primaryFill = isOutlineOrGhost ? '#FFFFFF' : c1;
@@ -620,8 +653,11 @@ export function renderConstruction(
     ? `<rect x="${mainBox.x}" y="${mainBox.y}" width="${mainBox.w}" height="${mainBox.h}" rx="${r}" fill="#FFFFFF"/><rect x="${mainBox.x}" y="${mainBox.y}" width="${mainBox.w}" height="${mainBox.h}" rx="${r}" fill="${c2}" fill-opacity="${fillMode === 'ghost' ? '0.12' : '0.06'}" stroke="${c1}" stroke-width="${Math.max(4, Math.min(10, weight))}"/>`
     : `<rect x="${mainBox.x}" y="${mainBox.y}" width="${mainBox.w}" height="${mainBox.h}" rx="${r}" fill="${c1}"/>`;
 
-  const accentSvg = renderAccentMark(accentBox, accentShape, c3, c2);
-  const iconSvg = renderIcon(iconBox.x, iconBox.y, iconBox.size, iconColor);
+  const accentSvg = showBg ? renderAccentMark(accentBox, accentShape, c3, c2) : '';
+  const effIconSize = showBg ? iconBox.size : Math.min(148, Math.round(iconBox.size * 1.28));
+  const effIconX = showBg ? iconBox.x : Math.round(100 - effIconSize / 2);
+  const effIconY = showBg ? iconBox.y : Math.round(100 - effIconSize / 2);
+  const iconSvg = showIcon ? renderIcon(effIconX, effIconY, effIconSize, iconColor) : '';
 
   let familyBackdrop = '';
 
@@ -1145,7 +1181,22 @@ export function renderConstruction(
     }
   }
 
-  return `${familyBackdrop}${accentSvg}${iconSvg}`;
+  const rawBackdrop = showBg ? `${familyBackdrop}${accentSvg}` : '';
+  const hasBgTransform = bgScale !== 1 || bgOx !== 0 || bgOy !== 0;
+  const backdropMarkup =
+    rawBackdrop && hasBgTransform
+      ? `<g transform="translate(${100 + bgOx}, ${100 + bgOy}) scale(${bgScale}) translate(-100, -100)">${rawBackdrop}</g>`
+      : rawBackdrop;
+
+  const iconCx = effIconX + effIconSize / 2;
+  const iconCy = effIconY + effIconSize / 2;
+  const hasIconTransform = iconScaleVal !== 1 || iconOx !== 0 || iconOy !== 0;
+  const iconMarkup =
+    iconSvg && hasIconTransform
+      ? `<g transform="translate(${iconCx + iconOx}, ${iconCy + iconOy}) scale(${iconScaleVal}) translate(${-iconCx}, ${-iconCy})">${iconSvg}</g>`
+      : iconSvg;
+
+  return `${backdropMarkup}${iconMarkup}`;
 }
 
 export function describeConstruction(spec: ConstructionSpec): string {

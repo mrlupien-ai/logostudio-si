@@ -99,6 +99,19 @@ export interface LogoState {
   emblemPadding: number;
   emblemCornerRadius: number;
 
+  // Independent Fundal (Backdrop) & Icon Layer Controls
+  showEmblemBg?: boolean;
+  showEmblemIcon?: boolean;
+  emblemBgColor?: string;
+  emblemBgAccentColor?: string;
+  emblemIconColor?: string;
+  emblemBgScale?: number;
+  emblemBgOffsetX?: number;
+  emblemBgOffsetY?: number;
+  emblemIconScale?: number;
+  emblemIconOffsetX?: number;
+  emblemIconOffsetY?: number;
+
   // Colors
   primary: string;
   secondary: string;
@@ -152,6 +165,17 @@ export interface LogoVariant {
   customSvgPath?: string;
   containerStyle: EmblemContainerStyle;
   construction?: ConstructionSpec;
+  showEmblemBg?: boolean;
+  showEmblemIcon?: boolean;
+  emblemBgColor?: string;
+  emblemBgAccentColor?: string;
+  emblemIconColor?: string;
+  emblemBgScale?: number;
+  emblemBgOffsetX?: number;
+  emblemBgOffsetY?: number;
+  emblemIconScale?: number;
+  emblemIconOffsetX?: number;
+  emblemIconOffsetY?: number;
   primary: string;
   secondary: string;
   accent: string;

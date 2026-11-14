@@ -1,5 +1,5 @@
 import { LogoState } from '../types/logo';
-import { buildEmblemSvgMarkup } from './svgBuilder';
+import { buildEmblemSvgMarkup, emblemConfigFromState } from './svgBuilder';
 import { drawLogoOnCanvas, loadSvgToImage } from './canvasRenderer';
 import { ensureFontLoaded } from './fontLoader';
 
@@ -18,24 +18,10 @@ export async function renderUploadCanvas(
 ): Promise<HTMLCanvasElement> {
   await ensureFontLoaded(state.fontFamily);
   const cfg: LogoState = opts.opaque && state.bgMode === 'transparent' ? { ...state, bgMode: 'white' } : state;
+  const surfaceBgHex =
+    cfg.bgMode === 'dark' ? '#07090E' : cfg.bgMode === 'brand' ? cfg.primary : '#FFFFFF';
   const emblemSvg = buildEmblemSvgMarkup(
-    {
-      containerStyle: cfg.containerStyle,
-      construction: cfg.construction,
-      activeIcon: cfg.activeIcon,
-      secondaryIcon: cfg.secondaryIcon,
-      emblemFusion: cfg.emblemFusion,
-      customSvgPath: cfg.customSvgPath,
-      primary: cfg.primary,
-      secondary: cfg.secondary,
-      accent: cfg.accent,
-      fontFamily: cfg.fontFamily,
-      word1: cfg.word1,
-      iconStrokeWidth: cfg.iconStrokeWidth,
-      iconRotation: cfg.iconRotation,
-      iconFlipH: cfg.iconFlipH,
-      iconFlipV: cfg.iconFlipV,
-    },
+    emblemConfigFromState(cfg, { surfaceBgHex }),
     600
   );
   const img = await loadSvgToImage(emblemSvg);

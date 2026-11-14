@@ -6,7 +6,14 @@ export function loadSvgToImage(svgString: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
     const url = URL.createObjectURL(blob);
-    const img = new Image();
+    const img = new Image() as HTMLImageElement & { __emblemBleedRatio?: number };
+    const vbMatch = svgString.match(/viewBox=["']([^"']+)["']/i);
+    if (vbMatch) {
+      const parts = vbMatch[1].trim().split(/[\s,]+/).map(Number);
+      if (parts.length === 4 && Number.isFinite(parts[0]) && parts[0] < 0) {
+        img.__emblemBleedRatio = Math.abs(parts[0]) / 200;
+      }
+    }
     img.onload = () => {
       URL.revokeObjectURL(url);
       resolve(img);
@@ -103,15 +110,13 @@ export function drawLogoOnCanvas(
   // Unified lockup layout
   const layout = computeLockupLayout(ctx, cfg, W, H, isSquare);
 
-  // 1. Draw Emblem
+  // 1. Draw Emblem (aligned with any SVG viewBox bleed margin so scaled/offset layers never clip)
   if (iconImg && layout.emblem.show) {
-    ctx.drawImage(
-      iconImg,
-      layout.emblem.x,
-      layout.emblem.y,
-      layout.emblem.size,
-      layout.emblem.size
-    );
+    const bleed = (iconImg as HTMLImageElement & { __emblemBleedRatio?: number }).__emblemBleedRatio || 0;
+    const drawX = layout.emblem.x - layout.emblem.size * bleed;
+    const drawY = layout.emblem.y - layout.emblem.size * bleed;
+    const drawSize = layout.emblem.size * (1 + bleed * 2);
+    ctx.drawImage(iconImg, drawX, drawY, drawSize, drawSize);
   }
 
   // 2. Draw Word 1 (with optional 45° stencil cut via offscreen destination-out layer)

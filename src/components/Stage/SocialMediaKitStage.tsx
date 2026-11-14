@@ -4,6 +4,7 @@ import { Download, Code, Type, Globe, Tag, Share2 } from 'lucide-react';
 import { LogoState } from '../../types/logo';
 import {
   buildEmblemInnerMarkup,
+  emblemConfigFromState,
   extractSvgInnerFromLucide,
   formatWordText,
   getTypographicWeights,
@@ -265,21 +266,20 @@ export function buildSocialFormatSvg(
   const w2Text = formatWordText(state.word2, state.letterCase2, weights.isUpper);
   const extText = state.keepExt ? state.ext : '';
 
-  const emblemInner = buildEmblemInnerMarkup({
-    containerStyle: state.containerStyle,
-    construction: state.construction,
-    activeIcon: state.activeIcon,
-    customSvgPath: state.customSvgPath,
-    primary: c1,
-    secondary: c2,
-    accent: c3,
-    fontFamily: font,
-    word1: state.word1,
-    iconStrokeWidth: state.iconStrokeWidth,
-    iconRotation: state.iconRotation,
-    iconFlipH: state.iconFlipH,
-    iconFlipV: state.iconFlipV,
-  });
+  const emblemInner = buildEmblemInnerMarkup(
+    emblemConfigFromState(state, {
+      primary: c1,
+      secondary: c2,
+      accent: c3,
+      fontFamily: font,
+      surfaceBgHex:
+        artDirection === 'brand-primary'
+          ? c1
+          : artDirection === 'midnight-glow'
+          ? '#070B14'
+          : '#FFFFFF',
+    })
+  );
 
   const patternIconInner = extractSvgInnerFromLucide(state.activeIcon, c1, 1.8);
   const isDarkStage = artDirection === 'brand-primary' || artDirection === 'midnight-glow';

@@ -9,6 +9,9 @@ import {
   Sparkles,
   Tag,
   Layers,
+  Eye,
+  EyeOff,
+  Square,
 } from 'lucide-react';
 import {
   LogoState,
@@ -130,6 +133,27 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
   const groups = state.iconGroups;
   const fusion = state.emblemFusion || 'single';
 
+  const showBg = state.showEmblemBg !== false;
+  const showIcon = state.showEmblemIcon !== false;
+  const bgScalePct = Math.round((state.emblemBgScale ?? 1) * 100);
+  const bgOx = state.emblemBgOffsetX ?? 0;
+  const bgOy = state.emblemBgOffsetY ?? 0;
+  const iconScalePct = Math.round((state.emblemIconScale ?? 1) * 100);
+  const iconOx = state.emblemIconOffsetX ?? 0;
+  const iconOy = state.emblemIconOffsetY ?? 0;
+  const hasCustomBgStyle =
+    !showBg ||
+    Boolean(state.emblemBgColor || state.emblemBgAccentColor) ||
+    bgScalePct !== 100 ||
+    bgOx !== 0 ||
+    bgOy !== 0;
+  const hasCustomIconStyle =
+    !showIcon ||
+    Boolean(state.emblemIconColor) ||
+    iconScalePct !== 100 ||
+    iconOx !== 0 ||
+    iconOy !== 0;
+
   return (
     <div className="p-3.5 border-b border-white/[0.06] space-y-3">
       <div className="flex items-center justify-between">
@@ -243,6 +267,308 @@ export const EmblemInspector: React.FC<EmblemInspectorProps> = ({
               Stacked (Centered Emblem Top)
             </option>
           </select>
+        </div>
+      </div>
+
+      {/* Independent Fundal (Background) & Icon Layer Controls (Separate from Name & TLD) */}
+      <div className="bg-[#07090E] border border-white/[0.08] rounded-xl p-2.5 space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <Square className="w-3 h-3 text-indigo-400" />
+            Emblem Layers (Independent)
+          </span>
+          {(hasCustomBgStyle || hasCustomIconStyle) && (
+            <button
+              type="button"
+              onClick={() =>
+                onChange({
+                  showEmblemBg: true,
+                  showEmblemIcon: true,
+                  emblemBgColor: undefined,
+                  emblemBgAccentColor: undefined,
+                  emblemIconColor: undefined,
+                  emblemBgScale: 1,
+                  emblemBgOffsetX: 0,
+                  emblemBgOffsetY: 0,
+                  emblemIconScale: 1,
+                  emblemIconOffsetX: 0,
+                  emblemIconOffsetY: 0,
+                })
+              }
+              className="text-[9px] font-semibold text-slate-400 hover:text-white flex items-center gap-1 cursor-pointer"
+              title="Reset all Background & Icon layer overrides"
+            >
+              <RotateCcw className="w-2.5 h-2.5" />
+              Reset Layers
+            </button>
+          )}
+        </div>
+
+        {!showBg && !showIcon && (
+          <div className="flex items-center justify-between gap-2 px-2 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+            <span className="text-[10px] text-amber-300 font-medium">
+              Both emblem layers hidden (Wordmark-Only)
+            </span>
+            <button
+              type="button"
+              onClick={() => onChange({ showEmblemBg: true, showEmblemIcon: true })}
+              className="px-2 py-0.5 rounded bg-amber-500/20 hover:bg-amber-500/30 text-[9px] font-bold text-amber-200 cursor-pointer shrink-0"
+            >
+              Restore Both
+            </button>
+          </div>
+        )}
+
+        {/* Layer 1: Background (Fundal) */}
+        <div className="rounded-lg bg-[#0B0F17] border border-white/[0.06] p-2 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold text-slate-200">
+              1. Background Shape
+            </span>
+            <div className="flex items-center gap-1.5">
+              {hasCustomBgStyle && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChange({
+                      showEmblemBg: true,
+                      emblemBgColor: undefined,
+                      emblemBgAccentColor: undefined,
+                      emblemBgScale: 1,
+                      emblemBgOffsetX: 0,
+                      emblemBgOffsetY: 0,
+                    })
+                  }
+                  title="Reset Background Layer"
+                  className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.09] text-slate-400 hover:text-white cursor-pointer"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onChange({ showEmblemBg: !showBg })}
+                className={`px-2 py-0.5 rounded border text-[9px] font-semibold flex items-center gap-1 transition cursor-pointer ${
+                  showBg
+                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+                    : 'bg-rose-500/15 border-rose-500/35 text-rose-300'
+                }`}
+              >
+                {showBg ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+                {showBg ? 'Visible' : 'Hidden'}
+              </button>
+            </div>
+          </div>
+
+          <div className={showBg ? 'space-y-2' : 'space-y-2 opacity-40 pointer-events-none'}>
+            <div className="grid grid-cols-2 gap-1.5">
+              <label className="flex items-center justify-between gap-1.5 bg-[#07090E] border border-white/[0.07] rounded px-1.5 py-1 cursor-pointer">
+                <span className="text-[9px] text-slate-400">Bg Fill</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[8px] font-mono text-slate-300 uppercase">
+                    {(state.emblemBgColor || state.primary).toUpperCase()}
+                  </span>
+                  <input
+                    type="color"
+                    value={state.emblemBgColor || state.primary}
+                    onChange={(e) => onChange({ emblemBgColor: e.target.value })}
+                    className="w-4 h-4 rounded cursor-pointer bg-transparent border-0 p-0"
+                  />
+                </div>
+              </label>
+
+              <label className="flex items-center justify-between gap-1.5 bg-[#07090E] border border-white/[0.07] rounded px-1.5 py-1 cursor-pointer">
+                <span className="text-[9px] text-slate-400">Bg Accent</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[8px] font-mono text-slate-300 uppercase">
+                    {(state.emblemBgAccentColor || state.secondary).toUpperCase()}
+                  </span>
+                  <input
+                    type="color"
+                    value={state.emblemBgAccentColor || state.secondary}
+                    onChange={(e) => onChange({ emblemBgAccentColor: e.target.value })}
+                    className="w-4 h-4 rounded cursor-pointer bg-transparent border-0 p-0"
+                  />
+                </div>
+              </label>
+            </div>
+
+            <div>
+              <div className="flex justify-between text-[9px] mb-0.5">
+                <span className="text-slate-400">Background Size (Uniform)</span>
+                <span className="text-indigo-300 font-mono">{bgScalePct}%</span>
+              </div>
+              <input
+                type="range"
+                min="50"
+                max="140"
+                step="5"
+                value={bgScalePct}
+                onChange={(e) =>
+                  onChange({ emblemBgScale: parseInt(e.target.value, 10) / 100 })
+                }
+                className="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="flex justify-between text-[9px] mb-0.5">
+                  <span className="text-slate-400">Bg X</span>
+                  <span className="text-slate-300 font-mono">{bgOx}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="-35"
+                  max="35"
+                  step="1"
+                  value={bgOx}
+                  onChange={(e) => onChange({ emblemBgOffsetX: parseInt(e.target.value, 10) })}
+                  className="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg cursor-pointer"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-[9px] mb-0.5">
+                  <span className="text-slate-400">Bg Y</span>
+                  <span className="text-slate-300 font-mono">{bgOy}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="-35"
+                  max="35"
+                  step="1"
+                  value={bgOy}
+                  onChange={(e) => onChange({ emblemBgOffsetY: parseInt(e.target.value, 10) })}
+                  className="w-full accent-indigo-500 h-1 bg-slate-800 rounded-lg cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Layer 2: Foreground Icon */}
+        <div className="rounded-lg bg-[#0B0F17] border border-white/[0.06] p-2 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[10px] font-bold text-slate-200">
+              2. Foreground Icon
+            </span>
+            <div className="flex items-center gap-1.5">
+              {hasCustomIconStyle && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onChange({
+                      showEmblemIcon: true,
+                      emblemIconColor: undefined,
+                      emblemIconScale: 1,
+                      emblemIconOffsetX: 0,
+                      emblemIconOffsetY: 0,
+                    })
+                  }
+                  title="Reset Icon Layer"
+                  className="p-1 rounded bg-white/[0.04] hover:bg-white/[0.09] text-slate-400 hover:text-white cursor-pointer"
+                >
+                  <RotateCcw className="w-2.5 h-2.5" />
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => onChange({ showEmblemIcon: !showIcon })}
+                className={`px-2 py-0.5 rounded border text-[9px] font-semibold flex items-center gap-1 transition cursor-pointer ${
+                  showIcon
+                    ? 'bg-emerald-500/15 border-emerald-500/35 text-emerald-300'
+                    : 'bg-rose-500/15 border-rose-500/35 text-rose-300'
+                }`}
+              >
+                {showIcon ? <Eye className="w-2.5 h-2.5" /> : <EyeOff className="w-2.5 h-2.5" />}
+                {showIcon ? 'Visible' : 'Hidden'}
+              </button>
+            </div>
+          </div>
+
+          <div className={showIcon ? 'space-y-2' : 'space-y-2 opacity-40 pointer-events-none'}>
+            <div className="flex items-center gap-1.5">
+              <label className="flex-1 flex items-center justify-between gap-1.5 bg-[#07090E] border border-white/[0.07] rounded px-2 py-1 cursor-pointer">
+                <span className="text-[9px] text-slate-400">Icon Color</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[8px] font-mono text-slate-300 uppercase">
+                    {state.emblemIconColor
+                      ? state.emblemIconColor.toUpperCase()
+                      : showBg
+                      ? 'AUTO'
+                      : state.primary.toUpperCase()}
+                  </span>
+                  <input
+                    type="color"
+                    value={state.emblemIconColor || (showBg ? '#FFFFFF' : state.primary)}
+                    onChange={(e) => onChange({ emblemIconColor: e.target.value })}
+                    className="w-4 h-4 rounded cursor-pointer bg-transparent border-0 p-0"
+                  />
+                </div>
+              </label>
+              {state.emblemIconColor && (
+                <button
+                  type="button"
+                  onClick={() => onChange({ emblemIconColor: undefined })}
+                  className="px-2 py-1 rounded bg-white/[0.05] hover:bg-white/[0.1] border border-white/[0.08] text-[9px] font-semibold text-slate-300 cursor-pointer"
+                  title="Revert to automatic WCAG contrast color"
+                >
+                  Auto
+                </button>
+              )}
+            </div>
+
+            <div>
+              <div className="flex justify-between text-[9px] mb-0.5">
+                <span className="text-slate-400">Icon Size (Uniform)</span>
+                <span className="text-emerald-300 font-mono">{iconScalePct}%</span>
+              </div>
+              <input
+                type="range"
+                min="40"
+                max="150"
+                step="5"
+                value={iconScalePct}
+                onChange={(e) =>
+                  onChange({ emblemIconScale: parseInt(e.target.value, 10) / 100 })
+                }
+                className="w-full accent-emerald-500 h-1 bg-slate-800 rounded-lg cursor-pointer"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <div className="flex justify-between text-[9px] mb-0.5">
+                  <span className="text-slate-400">Icon X</span>
+                  <span className="text-slate-300 font-mono">{iconOx}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="-35"
+                  max="35"
+                  step="1"
+                  value={iconOx}
+                  onChange={(e) => onChange({ emblemIconOffsetX: parseInt(e.target.value, 10) })}
+                  className="w-full accent-emerald-500 h-1 bg-slate-800 rounded-lg cursor-pointer"
+                />
+              </div>
+              <div>
+                <div className="flex justify-between text-[9px] mb-0.5">
+                  <span className="text-slate-400">Icon Y</span>
+                  <span className="text-slate-300 font-mono">{iconOy}px</span>
+                </div>
+                <input
+                  type="range"
+                  min="-35"
+                  max="35"
+                  step="1"
+                  value={iconOy}
+                  onChange={(e) => onChange({ emblemIconOffsetY: parseInt(e.target.value, 10) })}
+                  className="w-full accent-emerald-500 h-1 bg-slate-800 rounded-lg cursor-pointer"
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

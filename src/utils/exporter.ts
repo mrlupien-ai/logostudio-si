@@ -5,6 +5,7 @@ import {
   generateFullLogoSvgEmbedded,
   buildEmblemSvgMarkup,
   buildEmblemInnerMarkup,
+  emblemConfigFromState,
 } from './svgBuilder';
 import { drawLogoOnCanvas, loadSvgToImage } from './canvasRenderer';
 import { ensureFontLoaded } from './fontLoader';
@@ -165,25 +166,12 @@ export function buildAppIconVariantSvg(
     markColor = wcagContrastRatio('#FFFFFF', state.primary) >= 2.5 ? '#FFFFFF' : '#0F172A';
   }
 
-  const innerMark = buildEmblemInnerMarkup({
-    containerStyle: state.containerStyle,
-    construction: state.construction,
-    activeIcon: state.activeIcon,
-    secondaryIcon: state.secondaryIcon,
-    emblemFusion: state.emblemFusion,
-    customSvgPath: state.customSvgPath,
-    primary: state.primary,
-    secondary: state.secondary,
-    accent: state.accent,
-    fontFamily: state.fontFamily,
-    word1: state.word1,
-    iconStrokeWidth: state.iconStrokeWidth,
-    iconRotation: state.iconRotation,
-    iconFlipH: state.iconFlipH,
-    iconFlipV: state.iconFlipV,
-    markOnly: true,
-    markColor,
-  });
+  const innerMark = buildEmblemInnerMarkup(
+    emblemConfigFromState(state, {
+      markOnly: true,
+      markColor,
+    })
+  );
 
   const scale = (size * 0.72) / 200;
   const offset = Math.round((size - 200 * scale) / 2);
@@ -226,23 +214,7 @@ export async function downloadAppIconsZip(state: LogoState): Promise<void> {
 }
 
 export function generateReactLogoComponentCode(state: LogoState): string {
-  const emblemInner = buildEmblemInnerMarkup({
-    containerStyle: state.containerStyle,
-    construction: state.construction,
-    activeIcon: state.activeIcon,
-    secondaryIcon: state.secondaryIcon,
-    emblemFusion: state.emblemFusion,
-    customSvgPath: state.customSvgPath,
-    primary: state.primary,
-    secondary: state.secondary,
-    accent: state.accent,
-    fontFamily: state.fontFamily,
-    word1: state.word1,
-    iconStrokeWidth: state.iconStrokeWidth,
-    iconRotation: state.iconRotation,
-    iconFlipH: state.iconFlipH,
-    iconFlipV: state.iconFlipV,
-  });
+  const emblemInner = buildEmblemInnerMarkup(emblemConfigFromState(state));
 
   const cleanInner = emblemInner.trim().replace(/\n\s+/g, '\n        ');
   const w1 = state.word1 || 'Brand';
@@ -502,26 +474,7 @@ export async function generateBrandGuidelinesHtml(state: LogoState): Promise<str
     height: 600,
     background: 'white',
   });
-  const emblemSvg = buildEmblemSvgMarkup(
-    {
-      containerStyle: state.containerStyle,
-      construction: state.construction,
-      activeIcon: state.activeIcon,
-      secondaryIcon: state.secondaryIcon,
-      emblemFusion: state.emblemFusion,
-      customSvgPath: state.customSvgPath,
-      primary: state.primary,
-      secondary: state.secondary,
-      accent: state.accent,
-      fontFamily: state.fontFamily,
-      word1: state.word1,
-      iconStrokeWidth: state.iconStrokeWidth,
-      iconRotation: state.iconRotation,
-      iconFlipH: state.iconFlipH,
-      iconFlipV: state.iconFlipV,
-    },
-    200
-  );
+  const emblemSvg = buildEmblemSvgMarkup(emblemConfigFromState(state), 200);
 
   const swatches = [
     { role: 'Primary Ink', hex: state.primary },
@@ -777,26 +730,7 @@ async function generateFaviconAssets(state: LogoState): Promise<{
   manifestJson: string;
   browserConfigXml: string;
 }> {
-  const faviconSvg = buildEmblemSvgMarkup(
-    {
-      containerStyle: state.containerStyle,
-      construction: state.construction,
-      activeIcon: state.activeIcon,
-      secondaryIcon: state.secondaryIcon,
-      emblemFusion: state.emblemFusion,
-      customSvgPath: state.customSvgPath,
-      primary: state.primary,
-      secondary: state.secondary,
-      accent: state.accent,
-      fontFamily: state.fontFamily,
-      word1: state.word1,
-      iconStrokeWidth: state.iconStrokeWidth,
-      iconRotation: state.iconRotation,
-      iconFlipH: state.iconFlipH,
-      iconFlipV: state.iconFlipV,
-    },
-    512
-  );
+  const faviconSvg = buildEmblemSvgMarkup(emblemConfigFromState(state), 512);
 
   const [png16, png32, png48, png180, png192, png512] = await Promise.all([
     renderSvgToPngDataUrl(faviconSvg, 16, 16),
@@ -913,26 +847,7 @@ export async function downloadBrandKitZip(
     ),
   ]);
 
-  const emblemOnlySvg = buildEmblemSvgMarkup(
-    {
-      containerStyle: state.containerStyle,
-      construction: state.construction,
-      activeIcon: state.activeIcon,
-      secondaryIcon: state.secondaryIcon,
-      emblemFusion: state.emblemFusion,
-      customSvgPath: state.customSvgPath,
-      primary: state.primary,
-      secondary: state.secondary,
-      accent: state.accent,
-      fontFamily: state.fontFamily,
-      word1: state.word1,
-      iconStrokeWidth: state.iconStrokeWidth,
-      iconRotation: state.iconRotation,
-      iconFlipH: state.iconFlipH,
-      iconFlipV: state.iconFlipV,
-    },
-    512
-  );
+  const emblemOnlySvg = buildEmblemSvgMarkup(emblemConfigFromState(state), 512);
 
   // Root backwards-compatible files
   zip.file(`${baseName}-1500x900-vector.svg`, svgMainLight);
@@ -1086,22 +1001,7 @@ export async function download10VariantsZip(
 
     const svgMain = generateFullLogoSvg(v, { width: 1500, height: 900, background: 'white' });
     const svgSquare = generateFullLogoSvg(v, { width: 1200, height: 1200, background: 'white' });
-    const emblemSvg = buildEmblemSvgMarkup(
-      {
-        containerStyle: v.containerStyle,
-        construction: v.construction,
-        activeIcon: v.activeIcon,
-        secondaryIcon: v.secondaryIcon,
-        emblemFusion: v.emblemFusion,
-        customSvgPath: v.customSvgPath,
-        primary: v.primary,
-        secondary: v.secondary,
-        accent: v.accent,
-        fontFamily: v.fontFamily,
-        word1: v.word1,
-      },
-      200
-    );
+    const emblemSvg = buildEmblemSvgMarkup(emblemConfigFromState(v), 200);
 
     folder.file(`${baseName}-concept-${v.id}-1500x900.svg`, svgMain);
     folder.file(`${baseName}-concept-${v.id}-1200x1200.svg`, svgSquare);
@@ -1170,22 +1070,7 @@ export async function downloadPortfolioBatchZip(
       height: 900,
       background: 'white',
     });
-    const emblemSvg = buildEmblemSvgMarkup(
-      {
-        containerStyle: variant.containerStyle,
-        construction: variant.construction,
-        activeIcon: variant.activeIcon,
-        secondaryIcon: variant.secondaryIcon,
-        emblemFusion: variant.emblemFusion,
-        customSvgPath: variant.customSvgPath,
-        primary: variant.primary,
-        secondary: variant.secondary,
-        accent: variant.accent,
-        fontFamily: variant.fontFamily,
-        word1: variant.word1,
-      },
-      200
-    );
+    const emblemSvg = buildEmblemSvgMarkup(emblemConfigFromState(variant), 200);
 
     folder.file(`${slug}-horizontal.svg`, svgHorizontal);
     folder.file(`${slug}-emblem.svg`, emblemSvg);
